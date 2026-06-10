@@ -123,6 +123,19 @@
   .cum-inc{font-size:12px;color:var(--amber);font-weight:650;margin-top:5px}
   .cum-drv{font-size:12px;color:var(--ink-soft);margin-top:3px;line-height:1.5}
   .cum-drv b{color:var(--ink)}
+  /* view toggle + trends */
+  .vtabs{display:flex;gap:6px;background:var(--line-2);padding:4px;border-radius:11px;margin:14px 0 4px}
+  .vtab{flex:1;text-align:center;padding:10px 6px;border-radius:8px;font-weight:650;font-size:14px;
+    cursor:pointer;color:var(--ink-soft);border:1px solid transparent}
+  .vtab.active{background:#fff;color:var(--teal-d);border-color:var(--line);box-shadow:var(--shadow)}
+  .chart-svg{width:100%;height:auto;display:block;font-family:var(--sans)}
+  .chart-empty{color:var(--ink-soft);font-size:13px;text-align:center;padding:26px 8px}
+  .hm-cell{stroke:#fff;stroke-width:1}
+  .hm-lbl{font-size:11px;fill:var(--ink-soft)}
+  .ax-lbl{font-size:10.5px;fill:var(--ink-soft)}
+  .ax-line{stroke:var(--line);stroke-width:1}
+  .thr-line{stroke:var(--amber);stroke-width:1.4;stroke-dasharray:4 3}
+  .thr-lbl{font-size:10px;fill:var(--amber);font-weight:600}
   /* challenge meter */
   .meter{margin:12px 0 4px}
   .meter-track{position:relative;height:18px;background:var(--line-2);border-radius:999px;overflow:hidden}
@@ -162,6 +175,13 @@
 </header>
 
 <div class="wrap">
+
+  <div class="vtabs" id="viewTabs">
+    <div class="vtab active" data-view="score">Score</div>
+    <div class="vtab" data-view="trends">Trends</div>
+  </div>
+
+  <div id="viewScore">
 
   <!-- IDENTITY / CONTEXT -->
   <div class="card">
@@ -231,6 +251,36 @@
       <div><label class="fld">After</label><select id="chAfter"></select></div>
     </div>
     <div id="chResult"></div>
+  </div>
+
+  </div><!-- /viewScore -->
+
+  <!-- TRENDS DASHBOARD -->
+  <div id="viewTrends" class="hide">
+    <div class="card">
+      <p class="eyebrow">Trends</p>
+      <div class="grid g2" style="margin-bottom:10px">
+        <div><label class="fld" for="trPt">Patient</label><select id="trPt"></select></div>
+        <div><label class="fld" for="trScale">Scale</label><select id="trScale">
+          <option value="CQS">CQS</option><option value="BFCRS">BFCRS</option><option value="PCRS">PCRS</option>
+        </select></div>
+      </div>
+      <div class="tabs" id="trSub" style="margin:6px 0">
+        <div class="tab active" data-sub="timeline">Timeline<small>every exam</small></div>
+        <div class="tab" data-sub="daily">Daily cumulative<small>per day</small></div>
+        <div class="tab" data-sub="item">Per item<small>heatmap</small></div>
+      </div>
+      <div id="trItemWrap" class="hide" style="margin:8px 0">
+        <label class="fld" for="trItem">Highlight an item (line below heatmap)</label>
+        <select id="trItem"></select>
+      </div>
+      <div id="trCaption" class="scale-note" style="margin:8px 0"></div>
+      <div id="trChart" style="margin:6px 0;overflow-x:auto"></div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:10px">
+        <button class="btn ghost sm" id="trPNG">Export chart (PNG)</button>
+        <button class="btn ghost sm" id="trCSV">Export data (CSV)</button>
+      </div>
+    </div>
   </div>
 
   <details class="foot">
@@ -358,6 +408,7 @@ let DATA=[];            // saved assessments
 let scale="CQS";        // active scale
 let scores={};          // current item scores {n:value}
 let showDefs=true;
+let trSub="timeline";   // trends sub-view
 
 /* ---------------- helpers ---------------- */
 const $=s=>document.querySelector(s);
@@ -525,12 +576,22 @@ function copyCumulative(sc, a, d){
         ? `    • ${dr.name} (newly present)`
         : `    ${dr.n}. ${dr.name} ${dr.from} -> ${dr.to} (+${dr.delta})`).join("\n");
   }
+  // individual exams that day, in chronological order — shows transient post-challenge dips
+  const examLines=d.members.map(m=>{
+    const r=compute(sc,m.scores);
+    const sv = sc==="CQS" ? `${r.primary}/4 sign(s)` : (sc==="BFCRS" ? `${r.primary}/69 (screen ${r.secondary}/14)` : `${r.primary}/60`);
+    return `  ${fmtTime(m.dt)} — ${sv}${m.comment?` — "${m.comment}"`:""}`;
+  }).join("\n");
   const txt=
 `CATATONIA — CUMULATIVE DAILY SCORE — ${S.title} (${sc})
 Patient: ${a.init||"?"}${a.age?" | "+a.age+(a.sex||""):a.sex?" | "+a.sex:""} | ${dayLabel(d.dk)}
 Exams included: ${d.count} (${d.members.map(m=>fmtTime(m.dt)).join(", ")})${driverTxt}
 ${head}
-Items at daily peak:
+
+Individual exams this day (chronological):
+${examLines}
+
+Items at daily peak (max value across the day):
 ${peak.length?peak.join("\n"):"  none"}`;
   copyText(txt,"Cumulative copied");
 }
@@ -768,6 +829,15 @@ $("#btnDefs").onclick=()=>{showDefs=!showDefs;$("#btnDefs").textContent=showDefs
 $("#btnReset").onclick=()=>{scores={};renderScale();toast("Items cleared");};
 $("#btnSave").onclick=saveAssessment;
 $("#btnNewPt").onclick=newPatient;
+// trends
+$("#viewTabs").addEventListener("click",e=>{const t=e.target.closest(".vtab");if(t)switchView(t.dataset.view);});
+$("#trSub").addEventListener("click",e=>{const t=e.target.closest(".tab");if(!t)return;
+  trSub=t.dataset.sub;document.querySelectorAll("#trSub .tab").forEach(x=>x.classList.toggle("active",x===t));renderTrends();});
+$("#trPt").addEventListener("change",()=>{fillItemSelect();renderTrends();});
+$("#trScale").addEventListener("change",()=>{fillItemSelect();renderTrends();});
+$("#trItem").addEventListener("change",renderTrends);
+$("#trPNG").onclick=exportPNG;
+$("#trCSV").onclick=exportCSV;
 $("#filterPt").addEventListener("change",()=>{renderHistory();});
 $("#chBefore").addEventListener("change",renderChallenge);
 $("#chAfter").addEventListener("change",renderChallenge);
@@ -802,6 +872,214 @@ $("#fileImport").addEventListener("change",e=>{
   };
   rd.readAsText(f);
 });
+
+/* ================= TRENDS DASHBOARD ================= */
+function trState(){
+  const pt=$("#trPt").value, sc=$("#trScale").value;
+  const exams=DATA.filter(a=>a.scale===sc && ptKey(a)===pt)
+    .sort((a,b)=>new Date(a.dt)-new Date(b.dt));
+  const days=cumulativeDays(exams,sc).slice().reverse(); // asc by day for charting
+  return {pt,sc,exams,days};
+}
+function scaleMax(sc){return sc==="CQS"?4:sc==="BFCRS"?69:60;}
+function scaleThreshold(sc){return sc==="CQS"?{v:1,lbl:"screen +"}:sc==="PCRS"?{v:9,lbl:"≥9 suggestive"}:null;}
+
+function fillTrendControls(preferPt){
+  const sel=$("#trPt"); const prev=sel.value;
+  const list=patientList();
+  sel.innerHTML=list.map(([k,label])=>`<option value="${k}">${escapeHtml(label)}${k.includes("·")?" "+escapeHtml(k.split("·")[1]):""}</option>`).join("");
+  if(!list.length){sel.innerHTML='<option value="">— no patients —</option>';}
+  const want = preferPt && [...sel.options].some(o=>o.value===preferPt) ? preferPt
+             : ([...sel.options].some(o=>o.value===prev)?prev:(sel.options[0]?sel.options[0].value:""));
+  sel.value=want;
+  fillItemSelect();
+}
+function fillItemSelect(){
+  const sc=$("#trScale").value, sel=$("#trItem");
+  const st=trState();
+  // items scored at least once
+  const scored=SCALES[sc].items.filter(it=>st.exams.some(e=>(e.scores[it.n]||0)>0));
+  const pool=scored.length?scored:SCALES[sc].items;
+  const prev=sel.value;
+  sel.innerHTML=pool.map(it=>`<option value="${it.n}">${it.n}. ${escapeHtml(it.name)}</option>`).join("");
+  if([...sel.options].some(o=>o.value===prev))sel.value=prev;
+}
+
+/* ---- SVG line chart (categorical x) ---- */
+function svgLineChart(labels, values, sc, opts){
+  opts=opts||{};
+  const W=720,H=320,m={t:24,r:18,b:78,l:42};
+  const iw=W-m.l-m.r, ih=H-m.t-m.b;
+  const max=opts.max!=null?opts.max:scaleMax(sc);
+  const n=values.length;
+  const X=i=> n<=1 ? m.l+iw/2 : m.l + i*(iw/(n-1));
+  const Y=v=> m.t + ih - (v/(max||1))*ih;
+  let g="";
+  // y axis baseline + max gridline
+  g+=`<line class="ax-line" x1="${m.l}" y1="${m.t+ih}" x2="${m.l+iw}" y2="${m.t+ih}"/>`;
+  g+=`<line class="ax-line" x1="${m.l}" y1="${m.t}" x2="${m.l}" y2="${m.t+ih}"/>`;
+  [0,Math.round(max/2),max].forEach(v=>{
+    const y=Y(v);
+    g+=`<line class="ax-line" x1="${m.l}" y1="${y}" x2="${m.l+iw}" y2="${y}" opacity="0.4"/>`;
+    g+=`<text class="ax-lbl" x="${m.l-6}" y="${y+3}" text-anchor="end">${v}</text>`;
+  });
+  // threshold
+  const thr=scaleThreshold(sc);
+  if(thr && thr.v<=max){
+    const y=Y(thr.v);
+    g+=`<line class="thr-line" x1="${m.l}" y1="${y}" x2="${m.l+iw}" y2="${y}"/>`;
+    g+=`<text class="thr-lbl" x="${m.l+iw}" y="${y-4}" text-anchor="end">${thr.lbl}</text>`;
+  }
+  // line + points
+  if(n){
+    const pts=values.map((v,i)=>`${X(i).toFixed(1)},${Y(v).toFixed(1)}`).join(" ");
+    g+=`<polyline points="${pts}" fill="none" stroke="#0e6b5c" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"/>`;
+    values.forEach((v,i)=>{
+      g+=`<circle cx="${X(i).toFixed(1)}" cy="${Y(v).toFixed(1)}" r="3.6" fill="#0e6b5c"/>`;
+      g+=`<text class="ax-lbl" x="${X(i).toFixed(1)}" y="${Y(v)-8}" text-anchor="middle" fill="#15241f">${v}</text>`;
+      // x labels rotated
+      const lx=X(i), ly=m.t+ih+12;
+      g+=`<text class="ax-lbl" x="${lx}" y="${ly}" text-anchor="end" transform="rotate(-40 ${lx} ${ly})">${escapeHtml(labels[i]||"")}</text>`;
+    });
+  }
+  if(opts.yTitle) g+=`<text class="ax-lbl" x="${m.l}" y="14" text-anchor="start" font-weight="600">${escapeHtml(opts.yTitle)}</text>`;
+  return `<svg class="chart-svg" viewBox="0 0 ${W} ${H}" data-w="${W}" data-h="${H}" xmlns="http://www.w3.org/2000/svg">${g}</svg>`;
+}
+
+/* ---- SVG heatmap (items × exams) ---- */
+function svgHeatmap(st){
+  const sc=st.sc, exams=st.exams;
+  const scored=SCALES[sc].items.filter(it=>exams.some(e=>(e.scores[it.n]||0)>0));
+  if(!exams.length||!scored.length) return null;
+  const rowH=22, colW=Math.max(34,Math.min(60,Math.floor(520/exams.length)));
+  const m={t:20,r:14,b:74,l:150};
+  const W=m.l+colW*exams.length+m.r, H=m.t+rowH*scored.length+m.b;
+  const colors=["#eef3f1","#bfe0d8","#5cae9d","#0e6b5c"]; // 0..3
+  let g="";
+  // column headers (time/date)
+  exams.forEach((e,ci)=>{
+    const x=m.l+ci*colW+colW/2, y=m.t-6;
+    const lbl=dayKey(e.dt)+" "+fmtTime(e.dt);
+    g+=`<text class="ax-lbl" x="${x}" y="${m.t+rowH*scored.length+12}" text-anchor="end" transform="rotate(-40 ${x} ${m.t+rowH*scored.length+12})">${escapeHtml(fmtTime(e.dt))}</text>`;
+  });
+  scored.forEach((it,ri)=>{
+    const y=m.t+ri*rowH;
+    g+=`<text class="hm-lbl" x="${m.l-6}" y="${y+rowH/2+3}" text-anchor="end">${escapeHtml((it.n+". "+it.name).slice(0,24))}</text>`;
+    exams.forEach((e,ci)=>{
+      const v=e.scores[it.n]||0;
+      const x=m.l+ci*colW;
+      g+=`<rect class="hm-cell" x="${x}" y="${y}" width="${colW}" height="${rowH}" fill="${colors[v]}"/>`;
+      if(v>0)g+=`<text x="${x+colW/2}" y="${y+rowH/2+3}" text-anchor="middle" font-size="11" fill="${v>=2?'#fff':'#15241f'}">${v}</text>`;
+    });
+  });
+  return `<svg class="chart-svg" viewBox="0 0 ${W} ${H}" data-w="${W}" data-h="${H}" xmlns="http://www.w3.org/2000/svg">${g}</svg>`;
+}
+
+function renderTrends(){
+  const chart=$("#trChart"), cap=$("#trCaption");
+  $("#trItemWrap").classList.toggle("hide", trSub!=="item");
+  const st=trState();
+  if(!st.pt || !st.exams.length){
+    chart.innerHTML='<div class="chart-empty">No saved assessments for this patient and scale yet.</div>';
+    cap.textContent=""; return;
+  }
+  if(trSub==="timeline"){
+    const labels=st.exams.map(e=>dayKey(e.dt).slice(5)+" "+fmtTime(e.dt));
+    const vals=st.exams.map(e=>compute(st.sc,e.scores).primary);
+    cap.innerHTML=`<b>Timeline</b> — every exam in order (within-day and across days). Each point is one assessment; dips after a lorazepam challenge appear here. ${st.exams.length} exam(s).`;
+    chart.innerHTML=svgLineChart(labels, vals, st.sc, {yTitle:(st.sc==="CQS"?"signs /4":st.sc==="BFCRS"?"severity /69":"total /60")});
+  } else if(trSub==="daily"){
+    const labels=st.days.map(d=>dayLabel(d.dk).replace(/^\w+,\s/,''));
+    const vals=st.days.map(d=>d.cumR.primary);
+    cap.innerHTML=`<b>Daily cumulative</b> — one point per day, taking each item's highest value that day. Shows the day-to-day trajectory. ${st.days.length} day(s).`;
+    chart.innerHTML=svgLineChart(labels, vals, st.sc, {yTitle:(st.sc==="CQS"?"signs /4":st.sc==="BFCRS"?"cum. severity /69":"cum. total /60")});
+  } else { // per item
+    const hm=svgHeatmap(st);
+    let html = hm || '<div class="chart-empty">No items scored above 0 for this patient/scale.</div>';
+    // single-item line below heatmap
+    const itN=+$("#trItem").value;
+    if(hm && itN){
+      const it=SCALES[st.sc].items.find(x=>x.n===itN);
+      const labels=st.exams.map(e=>dayKey(e.dt).slice(5)+" "+fmtTime(e.dt));
+      const vals=st.exams.map(e=>e.scores[itN]||0);
+      html += `<div style="margin-top:10px"><p class="eyebrow" style="margin:6px 0 2px">${escapeHtml(it?it.n+". "+it.name:"")} over time</p>`+
+              svgLineChart(labels, vals, st.sc, {max:(it&&it.opts===BIN)?3:3, yTitle:"item score 0–3"})+`</div>`;
+    }
+    cap.innerHTML=`<b>Per item</b> — heatmap of each scored item across every exam (darker = higher). Pick an item above to plot its line. ${st.exams.length} exam(s).`;
+    chart.innerHTML=html;
+  }
+}
+
+/* ---- exports ---- */
+function currentSVG(){return $("#trChart").querySelector("svg");}
+function exportPNG(){
+  const svg=currentSVG();
+  if(!svg){toast("Nothing to export");return;}
+  try{
+    const w=+svg.getAttribute("data-w")||720, h=+svg.getAttribute("data-h")||320, scale=2;
+    const xml=new XMLSerializer().serializeToString(svg);
+    const svg64="data:image/svg+xml;base64,"+btoa(unescape(encodeURIComponent(xml)));
+    const img=new Image();
+    img.onload=()=>{
+      const cv=document.createElement("canvas");cv.width=w*scale;cv.height=h*scale;
+      const ctx=cv.getContext("2d");ctx.fillStyle="#fff";ctx.fillRect(0,0,cv.width,cv.height);
+      ctx.scale(scale,scale);ctx.drawImage(img,0,0);
+      cv.toBlob(b=>{
+        if(!b){toast("PNG export not supported here");return;}
+        const url=URL.createObjectURL(b),a=document.createElement("a");
+        a.href=url;a.download=trFilename("png");document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(url);
+        toast("Chart exported");
+      },"image/png");
+    };
+    img.onerror=()=>toast("PNG export not supported here");
+    img.src=svg64;
+  }catch(e){toast("PNG export not supported here");}
+}
+function csvCell(v){v=(v==null?"":String(v));return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v;}
+function exportCSV(){
+  const st=trState();
+  if(!st.exams.length){toast("Nothing to export");return;}
+  const S=SCALES[st.sc];
+  const itemCols=S.items.map(it=>it.n+". "+it.name);
+  const header=["Kind","Date","Time","Comment","Total", st.sc==="BFCRS"?"Screen/14":"", ...itemCols].filter((h,i)=>!(i===5&&h===""));
+  const rows=[header];
+  st.exams.forEach(e=>{
+    const r=compute(st.sc,e.scores);
+    const base=["exam",dayKey(e.dt),fmtTime(e.dt),e.comment||"",r.primary];
+    if(st.sc==="BFCRS")base.push(r.secondary);
+    S.items.forEach(it=>base.push(e.scores[it.n]||0));
+    rows.push(base);
+  });
+  // cumulative daily rows
+  st.days.forEach(d=>{
+    const base=["cumulative",d.dk,"","daily max per item",d.cumR.primary];
+    if(st.sc==="BFCRS")base.push(d.cumR.secondary);
+    S.items.forEach(it=>base.push(d.itemMax[it.n]||0));
+    rows.push(base);
+  });
+  const csv=rows.map(r=>r.map(csvCell).join(",")).join("\r\n");
+  const blob=new Blob([csv],{type:"text/csv"});
+  const url=URL.createObjectURL(blob),a=document.createElement("a");
+  a.href=url;a.download=trFilename("csv");document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(url);
+  toast("Data exported ("+st.exams.length+" exam rows)");
+}
+function trFilename(ext){
+  const st=trState(); const init=(st.exams[0]&&st.exams[0].init)||"pt";
+  return `catatonia-trends-${init}-${st.sc}-${new Date().toISOString().slice(0,10)}.${ext}`;
+}
+
+function switchView(v){
+  $("#viewScore").classList.toggle("hide", v!=="score");
+  $("#viewTrends").classList.toggle("hide", v!=="trends");
+  document.querySelector(".runbar").style.display = v==="score"?"":"none";
+  document.querySelectorAll("#viewTabs .vtab").forEach(t=>t.classList.toggle("active",t.dataset.view===v));
+  if(v==="trends"){
+    const cur=$("#filterPt").value;
+    fillTrendControls(cur!=="__all"?cur:null);
+    renderTrends();
+  }
+}
+
 
 /* ---------------- init ---------------- */
 (async function init(){
