@@ -103,6 +103,11 @@
   .rec-ctx{font-size:12.5px;margin-top:4px}
   .rec-ctx b{color:var(--ink)}
   .rec-actions{display:flex;gap:6px;margin-top:9px;flex-wrap:wrap}
+  .rec{cursor:pointer;transition:border-color .12s,box-shadow .12s}
+  .rec:hover{border-color:var(--teal);box-shadow:0 2px 10px rgba(14,107,92,.10)}
+  .rec .rec-actions button{cursor:pointer}
+  .load-hint{font-size:10.5px;color:var(--ink-soft);margin-top:7px}
+  .rec:hover .load-hint{color:var(--teal)}
   /* trend */
   .trend{margin-top:6px}
   .spark{width:100%;height:54px;display:block}
@@ -111,6 +116,13 @@
   .trend-tbl th{font-size:10.5px;text-transform:uppercase;letter-spacing:.08em;color:var(--ink-soft);font-weight:650}
   .trend-tbl td.n{font-family:var(--mono);text-align:right}
   .delta-up{color:var(--red)} .delta-dn{color:var(--green)}
+  .cum{border:1px solid var(--line);border-left:3px solid var(--teal);border-radius:10px;
+    padding:9px 11px;margin:8px 0;background:#fff}
+  .cum-top{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .cum-score{font-family:var(--mono);font-weight:700;font-size:16px;margin-left:auto}
+  .cum-inc{font-size:12px;color:var(--amber);font-weight:650;margin-top:5px}
+  .cum-drv{font-size:12px;color:var(--ink-soft);margin-top:3px;line-height:1.5}
+  .cum-drv b{color:var(--ink)}
   /* challenge meter */
   .meter{margin:12px 0 4px}
   .meter-track{position:relative;height:18px;background:var(--line-2);border-radius:999px;overflow:hidden}
@@ -153,7 +165,10 @@
 
   <!-- IDENTITY / CONTEXT -->
   <div class="card">
-    <p class="eyebrow">Encounter — no PHI</p>
+    <div style="display:flex;align-items:center;margin-bottom:8px">
+      <p class="eyebrow" style="margin:0">Encounter — no PHI</p>
+      <button class="btn ghost sm" id="btnNewPt" style="margin-left:auto">+ New patient</button>
+    </div>
     <div class="grid g4">
       <div><label class="fld" for="fInit">Initials</label><input id="fInit" maxlength="4" placeholder="A.B." autocomplete="off"></div>
       <div><label class="fld" for="fAge">Age</label><input id="fAge" inputmode="numeric" maxlength="3" placeholder="14"></div>
@@ -445,14 +460,76 @@ function renderHistory(){
       ${a.comment?`<div class="rec-ctx"><b>Context:</b> ${escapeHtml(a.comment)}</div>`:""}`;
     c.innerHTML=head;
     const act=el("div","rec-actions");
-    const cp=el("button","btn ghost sm");cp.textContent="Copy to EMR";cp.onclick=()=>copyEMR(a);
-    const dl=el("button","btn ghost sm danger");dl.textContent="Delete";dl.onclick=()=>delRec(a.id);
-    act.appendChild(cp);act.appendChild(dl);
+    const ld=el("button","btn ghost sm");ld.textContent="Load / re-score";
+    ld.onclick=(e)=>{e.stopPropagation();loadRecord(a);};
+    const cp=el("button","btn ghost sm");cp.textContent="Copy to EMR";
+    cp.onclick=(e)=>{e.stopPropagation();copyEMR(a);};
+    const dl=el("button","btn ghost sm danger");dl.textContent="Delete";
+    dl.onclick=(e)=>{e.stopPropagation();delRec(a.id);};
+    act.appendChild(ld);act.appendChild(cp);act.appendChild(dl);
     c.appendChild(act);
+    const hint=el("div","load-hint");hint.textContent="↑ tap this card to load these scores into the scale";
+    c.appendChild(hint);
+    c.onclick=()=>loadRecord(a);
     box.appendChild(c);
   });
   renderTrend();
 }
+function dayKey(dt){return (dt||"").slice(0,10);}
+function dayLabel(dk){const d=new Date(dk+"T00:00");return isNaN(d)?dk:d.toLocaleDateString([], {weekday:"short",month:"short",day:"2-digit",year:"numeric"});}
+function fmtTime(iso){const d=new Date(iso);return isNaN(d)?"":d.toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"});}
+
+/* Roll a patient's same-scale assessments into per-day cumulative scores.
+   Cumulative = sum of the MAX value each item reached at any point that day.
+   "increase" and "drivers" are measured against the FIRST exam of that day. */
+function cumulativeDays(series, sc){
+  const byDay={};
+  series.forEach(a=>{(byDay[dayKey(a.dt)]=byDay[dayKey(a.dt)]||[]).push(a);});
+  return Object.keys(byDay).sort().reverse().map(dk=>{
+    const members=byDay[dk].slice().sort((a,b)=>new Date(a.dt)-new Date(b.dt));
+    const itemMax={};
+    SCALES[sc].items.forEach(it=>{
+      let mx=0; members.forEach(m=>{const v=m.scores[it.n]||0; if(v>mx)mx=v;});
+      if(mx>0) itemMax[it.n]=mx;
+    });
+    const cumR=compute(sc,itemMax);
+    const earliest=members[0];
+    const earlR=compute(sc,earliest.scores);
+    const increase=cumR.primary-earlR.primary;
+    const drivers=[];
+    SCALES[sc].items.forEach(it=>{
+      const to=itemMax[it.n]||0, from=earliest.scores[it.n]||0;
+      if(to>from) drivers.push({n:it.n,name:it.name,from,to,delta:to-from});
+    });
+    return {dk,members,itemMax,cumR,earlR,increase,drivers,count:members.length};
+  });
+}
+
+function copyCumulative(sc, a, d){
+  const S=SCALES[sc];
+  const peak=S.items.filter(it=>(d.itemMax[it.n]||0)>0)
+    .map(it=> sc==="CQS" ? `  • ${it.name}` : `  ${it.n}. ${it.name} — ${d.itemMax[it.n]}`);
+  let head;
+  if(sc==="CQS")head=`Cumulative result: ${d.cumR.primary}/4 sign(s) — ${d.cumR.positive?"POSITIVE SCREEN (proceed to full rating)":"negative"}`;
+  else if(sc==="BFCRS")head=`Cumulative screening (items 1-14): ${d.cumR.secondary}/14 present — ${d.cumR.positive?"POSITIVE (>=2)":"negative"}\nCumulative severity (items 1-23): ${d.cumR.primary}/69`;
+  else head=`Cumulative total: ${d.cumR.primary}/60 — ${d.cumR.positive?"SUGGESTIVE (>=9)":"below threshold (<9)"}`;
+  let driverTxt="";
+  if(d.count>=2 && d.increase>0){
+    driverTxt=`\nIncrease vs first exam: +${d.increase} (${d.earlR.primary} -> ${d.cumR.primary})\n  Driven by:\n`+
+      d.drivers.map(dr=> sc==="CQS"
+        ? `    • ${dr.name} (newly present)`
+        : `    ${dr.n}. ${dr.name} ${dr.from} -> ${dr.to} (+${dr.delta})`).join("\n");
+  }
+  const txt=
+`CATATONIA — CUMULATIVE DAILY SCORE — ${S.title} (${sc})
+Patient: ${a.init||"?"}${a.age?" | "+a.age+(a.sex||""):a.sex?" | "+a.sex:""} | ${dayLabel(d.dk)}
+Exams included: ${d.count} (${d.members.map(m=>fmtTime(m.dt)).join(", ")})${driverTxt}
+${head}
+Items at daily peak:
+${peak.length?peak.join("\n"):"  none"}`;
+  copyText(txt,"Cumulative copied");
+}
+
 function renderTrend(){
   const box=$("#trend"); box.innerHTML="";
   const f=$("#filterPt").value;
@@ -481,6 +558,35 @@ function renderTrend(){
       tbl.appendChild(tr);
     });
     wrap.appendChild(tbl);
+
+    // ----- Cumulative daily score (max per item across the day) -----
+    const days=cumulativeDays(series, sc);
+    if(days.some(d=>d.count>=2)){
+      const ch=el("p","eyebrow"); ch.style.margin="13px 0 2px";
+      ch.textContent="Cumulative daily score — max per item";
+      wrap.appendChild(ch);
+      const who=series[0];
+      days.forEach(d=>{
+        const c=el("div","cum");
+        const flag=d.cumR.flagPos;
+        let h=`<div class="cum-top"><span class="pill">${sc}</span><b>${dayLabel(d.dk)}</b>`+
+          `<span style="color:var(--ink-soft);font-size:12px">${d.count} exam${d.count>1?"s":""}</span>`+
+          `<span class="cum-score">${d.cumR.primary}${sc==="CQS"?"/4":"/"+d.cumR.max}</span></div>`+
+          `<div style="font-size:12px;margin-top:2px;${flag?'color:var(--amber);font-weight:650':'color:var(--green)'}">`+
+          `${d.cumR.flag}${sc==="BFCRS"?` · screen ${d.cumR.secondary}/14`:""}</div>`;
+        if(d.count>=2 && d.increase>0){
+          h+=`<div class="cum-inc">↑ +${d.increase} vs first exam (${d.earlR.primary} → ${d.cumR.primary})</div>`;
+          h+=`<div class="cum-drv"><b>Driven by:</b> ${d.drivers.map(dr=>`${escapeHtml(dr.name)} ${dr.from}→${dr.to}`).join(", ")}</div>`;
+        } else if(d.count>=2){
+          h+=`<div class="cum-drv">No increase — the first exam already captured the day's peak for every item.</div>`;
+        }
+        c.innerHTML=h;
+        const btn=el("button","btn ghost sm");btn.textContent="Copy to EMR";btn.style.marginTop="9px";
+        btn.onclick=()=>copyCumulative(sc, who, d);
+        c.appendChild(btn);
+        wrap.appendChild(c);
+      });
+    }
     box.appendChild(wrap);
   });
 }
@@ -591,8 +697,45 @@ async function saveAssessment(){
   await dbSet(KEY,DATA);
   refreshFilters();renderHistory();
   toast("Saved — "+init+" "+scale+" "+r.primary+(scale==="CQS"?"/4":"/"+r.max));
-  // reset item scores but keep patient identity for quick repeat (e.g., before/after)
-  scores={};renderScale();
+  // keep scores prefilled as a starting point for the next timepoint;
+  // reset the time to now and clear the comment so the next exam is consciously relabeled.
+  $("#fDate").value=nowLocal();
+  $("#fComment").value="";
+  // surface this patient's trend/cumulative
+  const k=ptKey(rec); const sel=$("#filterPt");
+  if([...sel.options].some(o=>o.value===k)){sel.value=k;renderHistory();}
+  renderScale();
+}
+
+/* Load a saved assessment back into the scoring area as a new timepoint.
+   Original record is untouched; date resets to now, comment cleared. */
+function loadRecord(a){
+  scale=a.scale;
+  scores={...a.scores};
+  $("#fInit").value=a.init||"";
+  $("#fAge").value=a.age||"";
+  $("#fSex").value=a.sex||"";
+  $("#fDate").value=nowLocal();
+  $("#fComment").value="";
+  const k=ptKey(a); const sel=$("#filterPt");
+  if([...sel.options].some(o=>o.value===k)){sel.value=k;}
+  renderScale();renderHistory();
+  window.scrollTo({top:0,behavior:"smooth"});
+  toast("Loaded "+(a.init||"?")+" "+a.scale+" — adjust and save as new timepoint");
+}
+
+/* Clear the form completely to begin a brand-new patient. */
+function newPatient(){
+  scores={};
+  $("#fInit").value="";
+  $("#fAge").value="";
+  $("#fSex").value="";
+  $("#fComment").value="";
+  $("#fDate").value=nowLocal();
+  $("#filterPt").value="__all";
+  renderScale();renderHistory();
+  $("#fInit").focus();
+  toast("New patient — form cleared");
 }
 async function delRec(id){
   DATA=DATA.filter(a=>a.id!==id);
@@ -619,6 +762,7 @@ $("#ctxChips").addEventListener("click",e=>{
 $("#btnDefs").onclick=()=>{showDefs=!showDefs;$("#btnDefs").textContent=showDefs?"Hide anchors":"Show anchors";renderScale();};
 $("#btnReset").onclick=()=>{scores={};renderScale();toast("Items cleared");};
 $("#btnSave").onclick=saveAssessment;
+$("#btnNewPt").onclick=newPatient;
 $("#filterPt").addEventListener("change",()=>{renderHistory();});
 $("#chBefore").addEventListener("change",renderChallenge);
 $("#chAfter").addEventListener("change",renderChallenge);
@@ -658,9 +802,20 @@ $("#fileImport").addEventListener("change",e=>{
 (async function init(){
   $("#fDate").value=nowLocal();
   DATA=(await dbGet(KEY))||[];
-  // default scale: pediatric hospital context
   scale="CQS";
+  let last=null;
+  if(DATA.length){
+    last=DATA.slice().sort((a,b)=>new Date(b.dt)-new Date(a.dt))[0];
+    // preselect the most recent assessment so you resume where you left off
+    scale=last.scale; scores={...last.scores};
+    $("#fInit").value=last.init||""; $("#fAge").value=last.age||""; $("#fSex").value=last.sex||"";
+    // date stays "now"; comment left blank for a fresh timepoint
+  }
   renderScale();refreshFilters();renderHistory();
+  if(last){
+    const k=ptKey(last), sel=$("#filterPt");
+    if([...sel.options].some(o=>o.value===k)){sel.value=k;renderHistory();}
+  }
 })();
 </script>
 </body>
