@@ -234,14 +234,19 @@
   </div>
 
   <details class="foot">
-    <summary>Notes, references &amp; data handling</summary>
+    <summary>References, attribution &amp; data handling</summary>
     <p>
       <b>No PHI.</b> Only initials, age, sex, date/time and a free-text comment are stored. Do not enter names, MRNs or DOBs.
       Data is saved locally in this browser only and never leaves the device; use Export for a portable JSON backup.<br><br>
-      <b>CQS</b> — Catatonia Quick Screen (Luccarelli et&nbsp;al., 2025): any one of excitement, mutism, staring, or posturing = positive screen → proceed to full rating.<br>
-      <b>BFCRS</b> — Bush–Francis Catatonia Rating Scale (Bush et&nbsp;al., 1996), 23 items, 0–3 (six items 0/3 only). Screening instrument = first 14 items; ≥2 present = positive screen.<br>
-      <b>PCRS</b> — Pediatric Catatonia Rating Scale (Benarous et&nbsp;al., 2016), 20 items, max 60, suggestive threshold ≥9. The item set here approximates the published scale (BFCRS anchors for shared items, plus the documented pediatric additions). Verify exact items/anchors against the source before clinical use.<br><br>
-      A decision-support aid, not a diagnostic device. Clinical judgement governs.
+
+      <b>Scales &amp; sources</b><br>
+      <b>CQS</b> — Catatonia Quick Screen. Luccarelli J, et&nbsp;al. <i>Acta Psychiatrica Scandinavica</i> (2025). Any one of excitement, mutism, staring, or posturing = positive screen → proceed to a full rating.<br>
+      <b>BFCRS</b> — Bush–Francis Catatonia Rating Scale. Bush G, Fink M, Petrides G, Dowling F, Francis A. Catatonia. I. Rating scale and standardized examination. <i>Acta Psychiatr Scand.</i> 1996;93(2):129–136. 23 items scored 0–3 (six items 0/3 only); screening instrument = first 14 items, ≥2 present = positive screen. Official training materials: University of Rochester (Oldham, Wortzel &amp; Francis).<br>
+      <b>PCRS</b> — Pediatric Catatonia Rating Scale. Benarous X, Consoli A, Raffin M, et&nbsp;al. Validation of the Pediatric Catatonia Rating Scale (PCRS). <i>Schizophr Res.</i> 2016;176(2–3):378–386. 20 items, max 60, suggestive threshold ≥9.<br><br>
+
+      <b>Attribution &amp; copyright.</b> The catatonia rating scales referenced here were created by their respective authors and remain their intellectual property and that of their publishers. This tool reproduces only short item labels, the numeric scoring structure, and validated cut-offs (facts/method), with all item descriptions written in original wording for bedside reference — it is not a reproduction of any published manual or anchor text. For the authoritative instruments and scoring manuals, consult the original publications. The PCRS item set here is an independent functional rendering; verify against Benarous et&nbsp;al. (2016) before clinical use.<br><br>
+
+      <b>Not affiliated / not endorsed.</b> This is an independent clinical-support utility. It is not affiliated with, authored by, or endorsed by the scale authors, the University of Rochester, Pitié-Salpêtrière, or any journal or publisher. A decision-support aid, not a diagnostic device or regulated medical software. Clinical judgement governs.
     </p>
   </details>
 </div>
@@ -271,65 +276,65 @@ const SCALES = {
     title:"Catatonia Quick Screen", max:4, type:"screen",
     note:{cls:"", html:"Rapid 4-sign screen. <b>Any one sign present = positive</b> → perform a full rating (PCRS/BFCRS)."},
     items:[
-      {n:1,name:"Excitement",def:"Extreme, non-purposeful hyperactivity / motor unrest.",opts:PA},
-      {n:2,name:"Mutism",def:"Verbally unresponsive or minimally responsive.",opts:PA},
-      {n:3,name:"Staring",def:"Fixed gaze, little visual scanning, decreased blinking.",opts:PA},
-      {n:4,name:"Posturing / catalepsy",def:"Spontaneous maintenance of posture(s) against gravity.",opts:PA},
+      {n:1,name:"Excitement",def:"Marked, aimless overactivity and restlessness that isn't goal-directed.",opts:PA},
+      {n:2,name:"Mutism",def:"Little or no speech relative to what's expected.",opts:PA},
+      {n:3,name:"Staring",def:"Eyes held on a fixed point, sparse scanning, infrequent blinking.",opts:PA},
+      {n:4,name:"Posturing / catalepsy",def:"Holds a self-generated position and sustains it against gravity.",opts:PA},
     ]
   },
   BFCRS:{
     title:"Bush–Francis Catatonia Rating Scale", max:69, type:"bfcrs",
     note:{cls:"", html:"Items 1–14 are the screening instrument (<b>≥2 present = positive screen</b>). All 23 items sum to a severity score."},
     items:[
-      {n:1,name:"Immobility / stupor",def:"Extreme hypoactivity, immobile, minimally responsive.",opts:SEV},
-      {n:2,name:"Mutism",def:"Verbally unresponsive or minimally responsive.",opts:SEV},
-      {n:3,name:"Staring",def:"Fixed gaze, little scanning, decreased blinking.",opts:SEV},
-      {n:4,name:"Posturing / catalepsy",def:"Spontaneous maintenance of posture(s).",opts:SEV},
-      {n:5,name:"Grimacing",def:"Maintenance of odd facial expressions.",opts:SEV},
-      {n:6,name:"Echopraxia / echolalia",def:"Mimicking examiner's movements or speech.",opts:SEV},
-      {n:7,name:"Stereotypy",def:"Repetitive, non-goal-directed motor activity.",opts:SEV},
-      {n:8,name:"Mannerisms",def:"Odd, purposeful movements; abnormality in the act itself.",opts:SEV},
-      {n:9,name:"Verbigeration",def:"Repetition of phrases/sentences, like a scratched record.",opts:SEV},
-      {n:10,name:"Rigidity",def:"Rigid position maintained vs. attempts to move (exclude cogwheel/tremor).",opts:SEV},
-      {n:11,name:"Negativism",def:"Motiveless resistance / contrary behaviour to instruction.",opts:SEV},
-      {n:12,name:"Waxy flexibility",def:"Initial resistance then bends like a candle (0 or 3).",opts:BIN},
-      {n:13,name:"Withdrawal",def:"Refusal to eat, drink and/or make eye contact.",opts:SEV},
-      {n:14,name:"Excitement",def:"Extreme non-purposeful hyperactivity / motor unrest.",opts:SEV},
-      {n:15,name:"Impulsivity",def:"Sudden inappropriate behaviour without provocation.",opts:SEV},
-      {n:16,name:"Automatic obedience",def:"Exaggerated cooperation with requests.",opts:SEV},
-      {n:17,name:"Passive obedience (mitgehen)",def:"Arm raises to light finger pressure despite instruction (0 or 3).",opts:BIN},
-      {n:18,name:"Muscle resistance (gegenhalten)",def:"Resistance to passive movement, ↑ with speed (0 or 3).",opts:BIN},
-      {n:19,name:"Motorically stuck (ambitendency)",def:"Stuck in hesitant, indecisive movement (0 or 3).",opts:BIN},
-      {n:20,name:"Grasp reflex",def:"Automatic palmar grasp to stimulation (0 or 3).",opts:BIN},
-      {n:21,name:"Perseveration",def:"Returns repeatedly to same topic/movement (0 or 3).",opts:BIN},
-      {n:22,name:"Combativeness",def:"Undirected belligerence / aggression.",opts:SEV},
-      {n:23,name:"Autonomic abnormality",def:"Abnormal temp, BP, pulse, RR, sweating, flushing.",opts:SEV},
+      {n:1,name:"Immobility / stupor",def:"Movement and reactivity to the environment profoundly reduced.",opts:SEV},
+      {n:2,name:"Mutism",def:"Little or no speech relative to what's expected.",opts:SEV},
+      {n:3,name:"Staring",def:"Eyes fixed, scanning sparse, blinking reduced.",opts:SEV},
+      {n:4,name:"Posturing / catalepsy",def:"Adopts and sustains a self-generated posture.",opts:SEV},
+      {n:5,name:"Grimacing",def:"Sustained or repeated odd facial expressions.",opts:SEV},
+      {n:6,name:"Echopraxia / echolalia",def:"Copies the examiner's actions or words.",opts:SEV},
+      {n:7,name:"Stereotypy",def:"Repetitive movement with no apparent purpose.",opts:SEV},
+      {n:8,name:"Mannerisms",def:"Goal-directed acts carried out in an odd, stilted way.",opts:SEV},
+      {n:9,name:"Verbigeration",def:"Looping repetition of the same words or phrases.",opts:SEV},
+      {n:10,name:"Rigidity",def:"Stiff muscle tone held against passive movement (set aside tremor/cogwheeling).",opts:SEV},
+      {n:11,name:"Negativism",def:"Resists or does the opposite of what's asked, for no clear reason.",opts:SEV},
+      {n:12,name:"Waxy flexibility",def:"Limb yields slowly to repositioning, then stays put (score 0 or 3).",opts:BIN},
+      {n:13,name:"Withdrawal",def:"Turns away from intake and contact — won't eat, drink, or meet the gaze.",opts:SEV},
+      {n:14,name:"Excitement",def:"Aimless, non-purposeful overactivity and unrest.",opts:SEV},
+      {n:15,name:"Impulsivity",def:"Abrupt, contextually inappropriate acts with no prompting.",opts:SEV},
+      {n:16,name:"Automatic obedience",def:"Over-complies with instructions beyond what's asked.",opts:SEV},
+      {n:17,name:"Passive obedience (mitgehen)",def:"Limb follows light examiner pressure despite a 'resist' instruction (score 0 or 3).",opts:BIN},
+      {n:18,name:"Muscle resistance (gegenhalten)",def:"Opposition to passive movement that grows with the examiner's speed (score 0 or 3).",opts:BIN},
+      {n:19,name:"Motorically stuck (ambitendency)",def:"Caught alternating between starting and stopping a movement (score 0 or 3).",opts:BIN},
+      {n:20,name:"Grasp reflex",def:"Reflexive hand closure when the palm is stroked (score 0 or 3).",opts:BIN},
+      {n:21,name:"Perseveration",def:"Keeps returning to the same act or theme (score 0 or 3).",opts:BIN},
+      {n:22,name:"Combativeness",def:"Aggression or belligerence with no clear target or trigger.",opts:SEV},
+      {n:23,name:"Autonomic abnormality",def:"Unstable vitals — temperature, pulse, BP, breathing, sweating, or flushing.",opts:SEV},
     ]
   },
   PCRS:{
     title:"Pediatric Catatonia Rating Scale", max:60, type:"pcrs",
     note:{cls:"warn", html:"Approximates the published 20-item PCRS (Benarous 2016, max 60). <b>Total ≥9 is suggestive of catatonia.</b> Confirm exact item anchors against the source before clinical use."},
     items:[
-      {n:1,name:"Immobility / stupor",def:"Extreme hypoactivity vs. baseline; minimally responsive.",opts:SEV},
-      {n:2,name:"Mutism",def:"New verbal unresponsiveness in a child who previously spoke.",opts:SEV},
-      {n:3,name:"Staring",def:"Fixed gaze, reduced scanning/blinking.",opts:SEV},
-      {n:4,name:"Posturing / catalepsy",def:"Spontaneous maintenance of posture(s).",opts:SEV},
-      {n:5,name:"Grimacing",def:"Maintenance of odd facial expressions.",opts:SEV},
-      {n:6,name:"Echophenomena",def:"Echopraxia / echolalia.",opts:SEV},
-      {n:7,name:"Stereotypies",def:"Repetitive non-goal-directed movement vs. baseline.",opts:SEV},
-      {n:8,name:"Mannerisms",def:"Odd purposeful movements.",opts:SEV},
-      {n:9,name:"Verbigeration / schizophasia",def:"Repetition / disorganized speech.",opts:SEV},
-      {n:10,name:"Rigidity",def:"Maintained rigid position vs. repositioning.",opts:SEV},
-      {n:11,name:"Negativism",def:"Motiveless resistance / contrary behaviour.",opts:SEV},
-      {n:12,name:"Waxy flexibility",def:"Candle-like resistance then repositioning.",opts:SEV},
+      {n:1,name:"Immobility / stupor",def:"Movement and responsiveness far below the child's own baseline.",opts:SEV},
+      {n:2,name:"Mutism",def:"Loss of expected speech in a child who normally talks.",opts:SEV},
+      {n:3,name:"Staring",def:"Fixed gaze with reduced scanning and blinking.",opts:SEV},
+      {n:4,name:"Posturing / catalepsy",def:"Adopts and sustains a self-generated posture.",opts:SEV},
+      {n:5,name:"Grimacing",def:"Sustained or repeated odd facial expressions.",opts:SEV},
+      {n:6,name:"Echophenomena",def:"Copies others' movements (echopraxia) or speech (echolalia).",opts:SEV},
+      {n:7,name:"Stereotypies",def:"Repetitive, purposeless movement above the child's baseline.",opts:SEV},
+      {n:8,name:"Mannerisms",def:"Ordinary acts performed in an odd, stylized manner.",opts:SEV},
+      {n:9,name:"Verbigeration / schizophasia",def:"Looping or disorganized, hard-to-follow speech.",opts:SEV},
+      {n:10,name:"Rigidity",def:"Stiff resistance to passive movement, position held.",opts:SEV},
+      {n:11,name:"Negativism",def:"Unexplained resistance or contrary responses to requests.",opts:SEV},
+      {n:12,name:"Waxy flexibility",def:"Limb yields slowly when repositioned, then stays.",opts:SEV},
       {n:13,name:"Refusal to eat / drink",def:"Reduced or absent oral intake.",opts:SEV},
-      {n:14,name:"Social withdrawal",def:"Withdrawal from interaction / eye contact vs. baseline.",opts:SEV},
-      {n:15,name:"Excitement",def:"Non-purposeful hyperactivity / motor unrest.",opts:SEV},
-      {n:16,name:"Impulsivity",def:"Sudden inappropriate behaviour without provocation.",opts:SEV},
-      {n:17,name:"Automatic / passive obedience",def:"Exaggerated cooperation; mitgehen.",opts:SEV},
-      {n:18,name:"Combativeness",def:"Undirected aggression.",opts:SEV},
-      {n:19,name:"Urinary incontinence",def:"New incontinence (pediatric addition).",opts:SEV},
-      {n:20,name:"Autonomic abnormality / acrocyanosis",def:"Vital-sign instability, sweating, flushing, acrocyanosis.",opts:SEV},
+      {n:14,name:"Social withdrawal",def:"Pulls back from interaction and eye contact versus baseline.",opts:SEV},
+      {n:15,name:"Excitement",def:"Aimless overactivity and motor unrest.",opts:SEV},
+      {n:16,name:"Impulsivity",def:"Abrupt, contextually inappropriate acts with no prompting.",opts:SEV},
+      {n:17,name:"Automatic / passive obedience",def:"Over-compliance; limb follows light examiner pressure (mitgehen).",opts:SEV},
+      {n:18,name:"Combativeness",def:"Undirected aggression or belligerence.",opts:SEV},
+      {n:19,name:"Urinary incontinence",def:"New-onset incontinence (pediatric-specific item).",opts:SEV},
+      {n:20,name:"Autonomic abnormality / acrocyanosis",def:"Unstable vitals, sweating, flushing, or bluish hands/feet (acrocyanosis).",opts:SEV},
     ]
   }
 };
