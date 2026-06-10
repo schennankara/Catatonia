@@ -1,0 +1,49 @@
+# NOTICE — Third-party clinical instruments
+
+This application provides an interactive scoring interface for three published
+catatonia rating scales. The scales themselves were created by their respective
+authors and remain their intellectual property and that of their publishers.
+This project is **independent** and is **not affiliated with, authored by, or
+endorsed by** any of those authors, institutions, journals, or publishers.
+
+## What this tool reproduces
+
+- Short item **labels** (e.g., "Mutism", "Staring") — standard clinical terminology.
+- The **numeric scoring structure** (0–3 ratings) and validated **cut-offs**
+  (BFCRS screen ≥2; PCRS total ≥9; CQS any sign), which are facts/method.
+- Brief **item descriptions written in original wording** by this project's author
+  for bedside reference.
+
+## What this tool does NOT reproduce
+
+- The published **anchor manuals**, full standardized-examination text, training
+  guides, or verbatim item descriptions from any source document.
+
+For the authoritative instruments, anchor definitions, and scoring manuals,
+consult the original publications below.
+
+## Sources & attribution
+
+**CQS — Catatonia Quick Screen**
+Luccarelli J, et al. The Catatonia Quick Screen (CQS): A Rapid Screening Tool
+for Catatonia in Adult and Pediatric Populations. *Acta Psychiatrica
+Scandinavica* (2025).
+
+**BFCRS — Bush–Francis Catatonia Rating Scale**
+Bush G, Fink M, Petrides G, Dowling F, Francis A. Catatonia. I. Rating scale and
+standardized examination. *Acta Psychiatr Scand.* 1996;93(2):129–136.
+Official educational/training materials are maintained at the University of
+Rochester (Oldham, Wortzel, in collaboration with Francis).
+
+**PCRS — Pediatric Catatonia Rating Scale**
+Benarous X, Consoli A, Raffin M, Bodeau N, Giannitelli M, Cohen D, Olliac B.
+Validation of the Pediatric Catatonia Rating Scale (PCRS). *Schizophr Res.*
+2016;176(2–3):378–386. doi:10.1016/j.schres.2016.06.020
+
+## Disclaimer
+
+This is a clinical **decision-support aid**, not a diagnostic device or regulated
+medical software. It does not store protected health information. Clinical
+judgement governs all decisions. If you are an author or rights-holder of any
+referenced instrument and have questions about this project, please open an issue
+in the repository.
