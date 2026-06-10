@@ -551,7 +551,7 @@ Change: ${diff>0?'+':''}${diff} (${pct>0?'-':''}${Math.abs(pct)}%) — ${positiv
 function copyEMR(a){
   const S=SCALES[a.scale], r=compute(a.scale,a.scores);
   const present=S.items.filter(it=>(a.scores[it.n]||0)>0)
-    .map(it=>`${it.name} ${a.scores[it.n]}`);
+    .map(it=> a.scale==="CQS" ? `  • ${it.name}` : `  ${it.n}. ${it.name} — ${a.scores[it.n]}`);
   let head;
   if(a.scale==="CQS")head=`Result: ${r.primary}/4 sign(s) — ${r.positive?"POSITIVE SCREEN (proceed to full rating)":"negative"}`;
   else if(a.scale==="BFCRS")head=`Screening (items 1-14): ${r.secondary}/14 present — ${r.positive?"POSITIVE (>=2)":"negative"}\nSeverity (items 1-23): ${r.primary}/69`;
@@ -560,7 +560,7 @@ function copyEMR(a){
 `CATATONIA ASSESSMENT — ${S.title} (${a.scale})
 Patient: ${a.init||"?"}${a.age?" | "+a.age+(a.sex||""):a.sex?" | "+a.sex:""} | ${fmtDT(a.dt)}
 ${a.comment?"Context: "+a.comment+"\n":""}${head}
-Signs present: ${present.length?present.join(", "):"none"}`;
+Signs present:${present.length?"\n"+present.join("\n"):" none"}`;
   copyText(txt,"Copied to clipboard");
 }
 function copyText(txt,msg){
