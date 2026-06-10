@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Catatonia Scales — CQS · PCRS · BFCRS</title>
+<style>
+  :root{
+    --paper:#f5f7f6; --card:#ffffff; --ink:#15241f; --ink-soft:#465a52;
+    --line:#dde4e0; --line-2:#eef2f0; --teal:#0e6b5c; --teal-d:#0a5044;
+    --amber:#b45309; --amber-bg:#fdf4e7; --green:#15803d; --green-bg:#edf7ef;
+    --red:#b3261e; --shadow:0 1px 2px rgba(20,40,32,.06),0 8px 24px rgba(20,40,32,.05);
+    --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{font-family:var(--sans);background:var(--paper);color:var(--ink);
+    -webkit-font-smoothing:antialiased;line-height:1.45;font-size:15px;
+    padding:0 0 120px;padding-bottom:calc(120px + env(safe-area-inset-bottom))}
+  .wrap{max-width:760px;margin:0 auto;padding:0 14px}
+  /* header */
+  header{position:sticky;top:0;z-index:30;background:rgba(245,247,246,.92);
+    backdrop-filter:saturate(1.4) blur(8px);border-bottom:1px solid var(--line)}
+  .head-row{display:flex;align-items:center;gap:10px;padding:10px 0}
+  .logo{width:30px;height:30px;border-radius:8px;background:var(--teal);flex:0 0 auto;
+    display:grid;place-items:center;color:#fff;font-weight:700;font-size:13px;letter-spacing:.5px}
+  h1{font-size:15px;margin:0;font-weight:650;letter-spacing:-.01em}
+  .sub{font-size:11px;color:var(--ink-soft);margin:0;letter-spacing:.02em}
+  .head-actions{margin-left:auto;display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+  .eyebrow{font-size:10.5px;text-transform:uppercase;letter-spacing:.14em;
+    color:var(--ink-soft);font-weight:650;margin:0 0 8px}
+  /* cards */
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;
+    padding:14px;margin:14px 0;box-shadow:var(--shadow)}
+  .grid{display:grid;gap:10px}
+  .g4{grid-template-columns:repeat(4,1fr)} .g2{grid-template-columns:1fr 1fr}
+  @media(max-width:520px){.g4{grid-template-columns:1fr 1fr}}
+  label.fld{display:block;font-size:11px;color:var(--ink-soft);font-weight:600;
+    letter-spacing:.02em;margin-bottom:4px}
+  input,select,textarea{width:100%;font-family:var(--sans);font-size:15px;color:var(--ink);
+    background:#fff;border:1px solid var(--line);border-radius:9px;padding:9px 10px;outline:none}
+  input:focus,select,textarea:focus{border-color:var(--teal);box-shadow:0 0 0 3px rgba(14,107,92,.12)}
+  textarea{resize:vertical;min-height:42px}
+  .chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+  .chip{font-size:12px;border:1px solid var(--line);background:#fff;border-radius:999px;
+    padding:5px 11px;cursor:pointer;color:var(--ink-soft);user-select:none}
+  .chip:hover{border-color:var(--teal);color:var(--teal)}
+  /* tabs */
+  .tabs{display:flex;gap:6px;background:var(--line-2);padding:4px;border-radius:11px;margin:14px 0 4px}
+  .tab{flex:1;text-align:center;padding:9px 6px;border-radius:8px;font-weight:600;font-size:13.5px;
+    cursor:pointer;color:var(--ink-soft);border:1px solid transparent}
+  .tab small{display:block;font-weight:500;font-size:10.5px;opacity:.8;letter-spacing:.02em}
+  .tab.active{background:#fff;color:var(--teal-d);border-color:var(--line);box-shadow:var(--shadow)}
+  /* items */
+  .scale-note{font-size:12px;color:var(--ink-soft);background:var(--line-2);
+    border-radius:9px;padding:9px 11px;margin:10px 0}
+  .scale-note.warn{background:var(--amber-bg);color:#7c4513}
+  .item{border-top:1px solid var(--line-2);padding:11px 0}
+  .item:first-child{border-top:0}
+  .item-top{display:flex;align-items:baseline;gap:8px}
+  .num{font-family:var(--mono);font-size:11.5px;color:var(--teal);font-weight:600;flex:0 0 auto;min-width:18px}
+  .item-name{font-weight:600;font-size:14px}
+  .item-name .v{font-family:var(--mono);font-weight:700;color:var(--teal-d);margin-left:6px;font-size:13px}
+  .item-def{font-size:12px;color:var(--ink-soft);margin:3px 0 0 26px}
+  .seg{display:flex;gap:5px;margin:8px 0 0 26px;flex-wrap:wrap}
+  .seg button{font-family:var(--mono);min-width:42px;padding:8px 4px;border-radius:8px;
+    border:1px solid var(--line);background:#fff;color:var(--ink-soft);font-size:14px;
+    font-weight:600;cursor:pointer;line-height:1.1}
+  .seg button .ah{display:block;font-family:var(--sans);font-size:9.5px;font-weight:500;opacity:.7;margin-top:1px}
+  .seg button:hover{border-color:var(--teal)}
+  .seg button.on{background:var(--teal);border-color:var(--teal);color:#fff}
+  .seg button.on .ah{opacity:.85}
+  .seg.bin button.on{background:var(--amber);border-color:var(--amber)}
+  /* sticky running score */
+  .runbar{position:fixed;left:0;right:0;bottom:0;z-index:40;background:#fff;
+    border-top:1px solid var(--line);box-shadow:0 -6px 20px rgba(20,40,32,.07);
+    padding:10px 14px;padding-bottom:calc(10px + env(safe-area-inset-bottom))}
+  .runbar .inner{max-width:760px;margin:0 auto;display:flex;align-items:center;gap:12px}
+  .score-read{display:flex;flex-direction:column;line-height:1.2}
+  .score-read .big{font-family:var(--mono);font-size:22px;font-weight:700;color:var(--ink)}
+  .score-read .lbl{font-size:11px;color:var(--ink-soft)}
+  .flag{font-size:11.5px;font-weight:700;padding:4px 9px;border-radius:999px;white-space:nowrap}
+  .flag.pos{background:var(--amber-bg);color:var(--amber)} .flag.neg{background:var(--green-bg);color:var(--green)}
+  .btn{font-family:var(--sans);font-size:14px;font-weight:600;border-radius:10px;padding:10px 16px;
+    border:1px solid var(--teal);background:var(--teal);color:#fff;cursor:pointer;white-space:nowrap}
+  .btn:hover{background:var(--teal-d)} .btn:active{transform:translateY(1px)}
+  .btn.ghost{background:#fff;color:var(--teal-d);border-color:var(--line)}
+  .btn.ghost:hover{border-color:var(--teal)}
+  .btn.sm{padding:6px 11px;font-size:12.5px;border-radius:8px}
+  .btn.danger{color:var(--red);border-color:#f0d6d4;background:#fff}
+  .runbar .btn{margin-left:auto}
+  /* history */
+  .empty{color:var(--ink-soft);font-size:13px;text-align:center;padding:18px 8px}
+  .filter-row{display:flex;gap:8px;align-items:center;margin-bottom:6px;flex-wrap:wrap}
+  .filter-row select{width:auto;flex:1;min-width:140px}
+  .rec{border:1px solid var(--line);border-radius:11px;padding:10px 11px;margin:8px 0;background:#fff}
+  .rec-top{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .pill{font-family:var(--mono);font-size:10.5px;font-weight:700;letter-spacing:.04em;
+    padding:2px 7px;border-radius:6px;background:var(--line-2);color:var(--teal-d)}
+  .rec-score{font-family:var(--mono);font-weight:700;font-size:16px;margin-left:auto}
+  .rec-meta{font-size:12px;color:var(--ink-soft);margin-top:3px}
+  .rec-ctx{font-size:12.5px;margin-top:4px}
+  .rec-ctx b{color:var(--ink)}
+  .rec-actions{display:flex;gap:6px;margin-top:9px;flex-wrap:wrap}
+  /* trend */
+  .trend{margin-top:6px}
+  .spark{width:100%;height:54px;display:block}
+  .trend-tbl{width:100%;border-collapse:collapse;font-size:12.5px;margin-top:8px}
+  .trend-tbl th,.trend-tbl td{text-align:left;padding:5px 6px;border-bottom:1px solid var(--line-2)}
+  .trend-tbl th{font-size:10.5px;text-transform:uppercase;letter-spacing:.08em;color:var(--ink-soft);font-weight:650}
+  .trend-tbl td.n{font-family:var(--mono);text-align:right}
+  .delta-up{color:var(--red)} .delta-dn{color:var(--green)}
+  /* challenge meter */
+  .meter{margin:12px 0 4px}
+  .meter-track{position:relative;height:18px;background:var(--line-2);border-radius:999px;overflow:hidden}
+  .meter-fill{position:absolute;left:0;top:0;bottom:0;border-radius:999px;background:var(--teal);transition:width .35s}
+  .meter-fill.good{background:var(--green)}
+  .meter-50{position:absolute;top:-4px;bottom:-4px;left:50%;width:2px;background:var(--ink);opacity:.55}
+  .meter-50 span{position:absolute;top:-15px;left:-12px;font-size:9.5px;color:var(--ink-soft);white-space:nowrap}
+  .ch-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:6px}
+  .ch-out{font-size:13px;margin-top:10px;padding:10px 12px;border-radius:10px;background:var(--line-2)}
+  .ch-out.good{background:var(--green-bg)} .ch-out.bad{background:var(--amber-bg)}
+  .ch-out .hl{font-family:var(--mono);font-weight:700;font-size:15px}
+  /* toast */
+  #toast{position:fixed;bottom:88px;left:50%;transform:translateX(-50%) translateY(20px);
+    background:var(--ink);color:#fff;font-size:13px;font-weight:600;padding:9px 16px;border-radius:999px;
+    opacity:0;pointer-events:none;transition:.25s;z-index:60;box-shadow:var(--shadow)}
+  #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  details.foot{margin:18px 0 4px}
+  details.foot summary{font-size:11.5px;color:var(--ink-soft);cursor:pointer}
+  .foot p{font-size:11.5px;color:var(--ink-soft);line-height:1.55}
+  .hide{display:none!important}
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap head-row">
+    <div class="logo">CS</div>
+    <div>
+      <h1>Catatonia Scales</h1>
+      <p class="sub">CQS · PCRS · BFCRS — de-identified bedside scoring</p>
+    </div>
+    <div class="head-actions">
+      <button class="btn ghost sm" id="btnExport">Export</button>
+      <button class="btn ghost sm" id="btnImport">Import</button>
+      <input type="file" id="fileImport" accept="application/json" class="hide">
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <!-- IDENTITY / CONTEXT -->
+  <div class="card">
+    <p class="eyebrow">Encounter — no PHI</p>
+    <div class="grid g4">
+      <div><label class="fld" for="fInit">Initials</label><input id="fInit" maxlength="4" placeholder="A.B." autocomplete="off"></div>
+      <div><label class="fld" for="fAge">Age</label><input id="fAge" inputmode="numeric" maxlength="3" placeholder="14"></div>
+      <div><label class="fld" for="fSex">Sex</label>
+        <select id="fSex"><option value="">—</option><option>M</option><option>F</option><option>X</option></select></div>
+      <div><label class="fld" for="fDate">Date &amp; time</label><input id="fDate" type="datetime-local"></div>
+    </div>
+    <div style="margin-top:10px">
+      <label class="fld" for="fComment">Context / comment</label>
+      <textarea id="fComment" placeholder="e.g. Baseline · Before lorazepam challenge · After 2 mg IV lorazepam"></textarea>
+      <div class="chips" id="ctxChips">
+        <span class="chip">Baseline</span>
+        <span class="chip">Before lorazepam challenge</span>
+        <span class="chip">After lorazepam challenge</span>
+        <span class="chip">Daily follow-up</span>
+        <span class="chip">Post-ECT</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- SCALE TABS -->
+  <div class="tabs" id="tabs">
+    <div class="tab" data-scale="CQS">CQS<small>4-item screen</small></div>
+    <div class="tab" data-scale="PCRS">PCRS<small>pediatric · /60</small></div>
+    <div class="tab" data-scale="BFCRS">BFCRS<small>23-item · /69</small></div>
+  </div>
+
+  <!-- ITEMS -->
+  <div class="card">
+    <div id="scaleNote"></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin:2px 0 6px">
+      <p class="eyebrow" id="scaleTitle" style="margin:0"></p>
+      <div style="display:flex;gap:6px">
+        <button class="btn ghost sm" id="btnDefs">Hide anchors</button>
+        <button class="btn ghost sm" id="btnReset">Clear items</button>
+      </div>
+    </div>
+    <div id="items"></div>
+  </div>
+
+  <!-- HISTORY -->
+  <div class="card">
+    <p class="eyebrow">Saved assessments</p>
+    <div class="filter-row">
+      <label class="fld" style="margin:0">Patient</label>
+      <select id="filterPt"><option value="__all">All</option></select>
+      <button class="btn ghost sm danger" id="btnClearAll" style="margin-left:auto">Clear all data</button>
+    </div>
+    <div id="trend"></div>
+    <div id="history"></div>
+  </div>
+
+  <!-- CHALLENGE -->
+  <div class="card" id="challengeCard">
+    <p class="eyebrow">Lorazepam challenge comparison</p>
+    <p style="font-size:12.5px;color:var(--ink-soft);margin:0 0 8px">
+      Pick two saved assessments (same scale). A ≥50% drop in severity is the conventional marker of a positive lorazepam response.</p>
+    <div class="ch-grid">
+      <div><label class="fld">Before</label><select id="chBefore"></select></div>
+      <div><label class="fld">After</label><select id="chAfter"></select></div>
+    </div>
+    <div id="chResult"></div>
+  </div>
+
+  <details class="foot">
+    <summary>Notes, references &amp; data handling</summary>
+    <p>
+      <b>No PHI.</b> Only initials, age, sex, date/time and a free-text comment are stored. Do not enter names, MRNs or DOBs.
+      Data is saved locally in this browser only and never leaves the device; use Export for a portable JSON backup.<br><br>
+      <b>CQS</b> — Catatonia Quick Screen (Luccarelli et&nbsp;al., 2025): any one of excitement, mutism, staring, or posturing = positive screen → proceed to full rating.<br>
+      <b>BFCRS</b> — Bush–Francis Catatonia Rating Scale (Bush et&nbsp;al., 1996), 23 items, 0–3 (six items 0/3 only). Screening instrument = first 14 items; ≥2 present = positive screen.<br>
+      <b>PCRS</b> — Pediatric Catatonia Rating Scale (Benarous et&nbsp;al., 2016), 20 items, max 60, suggestive threshold ≥9. The item set here approximates the published scale (BFCRS anchors for shared items, plus the documented pediatric additions). Verify exact items/anchors against the source before clinical use.<br><br>
+      A decision-support aid, not a diagnostic device. Clinical judgement governs.
+    </p>
+  </details>
+</div>
+
+<!-- RUNNING SCORE BAR -->
+<div class="runbar">
+  <div class="inner">
+    <div class="score-read">
+      <span class="big" id="runScore">0</span>
+      <span class="lbl" id="runLbl">severity</span>
+    </div>
+    <span class="flag neg" id="runFlag">—</span>
+    <button class="btn" id="btnSave">Save assessment</button>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+/* ---------------- scale definitions ---------------- */
+const SEV=[ {v:0,h:"absent"},{v:1,h:"mild"},{v:2,h:"mod"},{v:3,h:"severe"} ];
+const BIN=[ {v:0,h:"absent"},{v:3,h:"present"} ];
+const PA =[ {v:0,h:"absent"},{v:1,h:"present"} ];
+
+const SCALES = {
+  CQS:{
+    title:"Catatonia Quick Screen", max:4, type:"screen",
+    note:{cls:"", html:"Rapid 4-sign screen. <b>Any one sign present = positive</b> → perform a full rating (PCRS/BFCRS)."},
+    items:[
+      {n:1,name:"Excitement",def:"Extreme, non-purposeful hyperactivity / motor unrest.",opts:PA},
+      {n:2,name:"Mutism",def:"Verbally unresponsive or minimally responsive.",opts:PA},
+      {n:3,name:"Staring",def:"Fixed gaze, little visual scanning, decreased blinking.",opts:PA},
+      {n:4,name:"Posturing / catalepsy",def:"Spontaneous maintenance of posture(s) against gravity.",opts:PA},
+    ]
+  },
+  BFCRS:{
+    title:"Bush–Francis Catatonia Rating Scale", max:69, type:"bfcrs",
+    note:{cls:"", html:"Items 1–14 are the screening instrument (<b>≥2 present = positive screen</b>). All 23 items sum to a severity score."},
+    items:[
+      {n:1,name:"Immobility / stupor",def:"Extreme hypoactivity, immobile, minimally responsive.",opts:SEV},
+      {n:2,name:"Mutism",def:"Verbally unresponsive or minimally responsive.",opts:SEV},
+      {n:3,name:"Staring",def:"Fixed gaze, little scanning, decreased blinking.",opts:SEV},
+      {n:4,name:"Posturing / catalepsy",def:"Spontaneous maintenance of posture(s).",opts:SEV},
+      {n:5,name:"Grimacing",def:"Maintenance of odd facial expressions.",opts:SEV},
+      {n:6,name:"Echopraxia / echolalia",def:"Mimicking examiner's movements or speech.",opts:SEV},
+      {n:7,name:"Stereotypy",def:"Repetitive, non-goal-directed motor activity.",opts:SEV},
+      {n:8,name:"Mannerisms",def:"Odd, purposeful movements; abnormality in the act itself.",opts:SEV},
+      {n:9,name:"Verbigeration",def:"Repetition of phrases/sentences, like a scratched record.",opts:SEV},
+      {n:10,name:"Rigidity",def:"Rigid position maintained vs. attempts to move (exclude cogwheel/tremor).",opts:SEV},
+      {n:11,name:"Negativism",def:"Motiveless resistance / contrary behaviour to instruction.",opts:SEV},
+      {n:12,name:"Waxy flexibility",def:"Initial resistance then bends like a candle (0 or 3).",opts:BIN},
+      {n:13,name:"Withdrawal",def:"Refusal to eat, drink and/or make eye contact.",opts:SEV},
+      {n:14,name:"Excitement",def:"Extreme non-purposeful hyperactivity / motor unrest.",opts:SEV},
+      {n:15,name:"Impulsivity",def:"Sudden inappropriate behaviour without provocation.",opts:SEV},
+      {n:16,name:"Automatic obedience",def:"Exaggerated cooperation with requests.",opts:SEV},
+      {n:17,name:"Passive obedience (mitgehen)",def:"Arm raises to light finger pressure despite instruction (0 or 3).",opts:BIN},
+      {n:18,name:"Muscle resistance (gegenhalten)",def:"Resistance to passive movement, ↑ with speed (0 or 3).",opts:BIN},
+      {n:19,name:"Motorically stuck (ambitendency)",def:"Stuck in hesitant, indecisive movement (0 or 3).",opts:BIN},
+      {n:20,name:"Grasp reflex",def:"Automatic palmar grasp to stimulation (0 or 3).",opts:BIN},
+      {n:21,name:"Perseveration",def:"Returns repeatedly to same topic/movement (0 or 3).",opts:BIN},
+      {n:22,name:"Combativeness",def:"Undirected belligerence / aggression.",opts:SEV},
+      {n:23,name:"Autonomic abnormality",def:"Abnormal temp, BP, pulse, RR, sweating, flushing.",opts:SEV},
+    ]
+  },
+  PCRS:{
+    title:"Pediatric Catatonia Rating Scale", max:60, type:"pcrs",
+    note:{cls:"warn", html:"Approximates the published 20-item PCRS (Benarous 2016, max 60). <b>Total ≥9 is suggestive of catatonia.</b> Confirm exact item anchors against the source before clinical use."},
+    items:[
+      {n:1,name:"Immobility / stupor",def:"Extreme hypoactivity vs. baseline; minimally responsive.",opts:SEV},
+      {n:2,name:"Mutism",def:"New verbal unresponsiveness in a child who previously spoke.",opts:SEV},
+      {n:3,name:"Staring",def:"Fixed gaze, reduced scanning/blinking.",opts:SEV},
+      {n:4,name:"Posturing / catalepsy",def:"Spontaneous maintenance of posture(s).",opts:SEV},
+      {n:5,name:"Grimacing",def:"Maintenance of odd facial expressions.",opts:SEV},
+      {n:6,name:"Echophenomena",def:"Echopraxia / echolalia.",opts:SEV},
+      {n:7,name:"Stereotypies",def:"Repetitive non-goal-directed movement vs. baseline.",opts:SEV},
+      {n:8,name:"Mannerisms",def:"Odd purposeful movements.",opts:SEV},
+      {n:9,name:"Verbigeration / schizophasia",def:"Repetition / disorganized speech.",opts:SEV},
+      {n:10,name:"Rigidity",def:"Maintained rigid position vs. repositioning.",opts:SEV},
+      {n:11,name:"Negativism",def:"Motiveless resistance / contrary behaviour.",opts:SEV},
+      {n:12,name:"Waxy flexibility",def:"Candle-like resistance then repositioning.",opts:SEV},
+      {n:13,name:"Refusal to eat / drink",def:"Reduced or absent oral intake.",opts:SEV},
+      {n:14,name:"Social withdrawal",def:"Withdrawal from interaction / eye contact vs. baseline.",opts:SEV},
+      {n:15,name:"Excitement",def:"Non-purposeful hyperactivity / motor unrest.",opts:SEV},
+      {n:16,name:"Impulsivity",def:"Sudden inappropriate behaviour without provocation.",opts:SEV},
+      {n:17,name:"Automatic / passive obedience",def:"Exaggerated cooperation; mitgehen.",opts:SEV},
+      {n:18,name:"Combativeness",def:"Undirected aggression.",opts:SEV},
+      {n:19,name:"Urinary incontinence",def:"New incontinence (pediatric addition).",opts:SEV},
+      {n:20,name:"Autonomic abnormality / acrocyanosis",def:"Vital-sign instability, sweating, flushing, acrocyanosis.",opts:SEV},
+    ]
+  }
+};
+
+/* ---------------- storage adapter ---------------- */
+const KEY="catatonia_assessments_v1";
+const hasWS = typeof window!=="undefined" && window.storage && typeof window.storage.get==="function";
+const MEM={};
+async function dbGet(k){
+  if(hasWS){ try{const r=await window.storage.get(k,false);return r?JSON.parse(r.value):null;}catch(e){return null;} }
+  try{const v=localStorage.getItem(k);return v?JSON.parse(v):null;}catch(e){return MEM[k]??null;}
+}
+async function dbSet(k,val){
+  const s=JSON.stringify(val);
+  if(hasWS){ try{await window.storage.set(k,s,false);return;}catch(e){} }
+  try{localStorage.setItem(k,s);}catch(e){MEM[k]=val;}
+}
+
+/* ---------------- state ---------------- */
+let DATA=[];            // saved assessments
+let scale="CQS";        // active scale
+let scores={};          // current item scores {n:value}
+let showDefs=true;
+
+/* ---------------- helpers ---------------- */
+const $=s=>document.querySelector(s);
+const el=(t,c)=>{const e=document.createElement(t);if(c)e.className=c;return e;};
+function nowLocal(){const d=new Date();d.setMinutes(d.getMinutes()-d.getTimezoneOffset());return d.toISOString().slice(0,16);}
+function fmtDT(iso){if(!iso)return"—";const d=new Date(iso);return d.toLocaleString([], {year:"numeric",month:"short",day:"2-digit",hour:"2-digit",minute:"2-digit"});}
+function toast(m){const t=$("#toast");t.textContent=m;t.classList.add("show");clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove("show"),1600);}
+function ptKey(a){return (a.init||"?")+(a.age?"·"+a.age:"")+(a.sex?a.sex:"");}
+
+/* compute derived results for a score map under a scale */
+function compute(sc, sm){
+  const S=SCALES[sc];
+  if(sc==="CQS"){
+    const signs=S.items.filter(it=>(sm[it.n]||0)>0).map(it=>it.name);
+    return {primary:signs.length, max:4, primaryLbl:"signs", positive:signs.length>=1,
+      flag: signs.length>=1?"SCREEN POSITIVE":"Negative", flagPos:signs.length>=1, signs};
+  }
+  if(sc==="BFCRS"){
+    let sev=0, screenN=0;
+    S.items.forEach(it=>{const v=sm[it.n]||0;sev+=v;if(it.n<=14&&v>0)screenN++;});
+    return {primary:sev, max:69, primaryLbl:"severity", secondary:screenN, secondaryLbl:"screen 1–14",
+      positive:screenN>=2, flag:screenN>=2?"SCREEN POSITIVE":"Screen negative", flagPos:screenN>=2};
+  }
+  // PCRS
+  let tot=0; S.items.forEach(it=>tot+=(sm[it.n]||0));
+  return {primary:tot, max:60, primaryLbl:"total", positive:tot>=9,
+    flag:tot>=9?"≥9 — SUGGESTIVE":"Below threshold", flagPos:tot>=9};
+}
+
+/* ---------------- render: items ---------------- */
+function renderScale(){
+  const S=SCALES[scale];
+  $("#scaleTitle").textContent=S.title;
+  const note=$("#scaleNote");
+  note.className="scale-note"+(S.note.cls?" "+S.note.cls:"");
+  note.innerHTML=S.note.html;
+  document.querySelectorAll(".tab").forEach(t=>t.classList.toggle("active",t.dataset.scale===scale));
+  const box=$("#items"); box.innerHTML="";
+  S.items.forEach(it=>{
+    const cur=scores[it.n];
+    const row=el("div","item");
+    const top=el("div","item-top");
+    top.innerHTML=`<span class="num">${it.n}</span><span class="item-name">${it.name}<span class="v">${cur!=null?cur:""}</span></span>`;
+    row.appendChild(top);
+    if(showDefs){const d=el("div","item-def");d.textContent=it.def;row.appendChild(d);}
+    const seg=el("div","seg"+(it.opts===BIN?" bin":""));
+    it.opts.forEach(o=>{
+      const b=el("button"); b.dataset.n=it.n; b.dataset.v=o.v;
+      b.innerHTML=`${o.v}<span class="ah">${o.h}</span>`;
+      if(cur===o.v)b.classList.add("on");
+      seg.appendChild(b);
+    });
+    row.appendChild(seg);
+    box.appendChild(row);
+  });
+  renderRun();
+}
+function renderRun(){
+  const r=compute(scale,scores);
+  $("#runScore").textContent=r.primary+ (scale!=="CQS"?("/"+r.max):"/4");
+  $("#runLbl").textContent = scale==="BFCRS" ? `severity · screen ${r.secondary}/14` : r.primaryLbl;
+  const f=$("#runFlag");
+  f.textContent=r.flag;
+  f.className="flag "+(r.flagPos?"pos":"neg");
+}
+
+/* ---------------- render: history + trend ---------------- */
+function patientList(){
+  const m=new Map();
+  DATA.forEach(a=>{const k=ptKey(a);if(!m.has(k))m.set(k,a.init||"?");});
+  return [...m.entries()];
+}
+function refreshFilters(){
+  const sel=$("#filterPt"); const prev=sel.value;
+  sel.innerHTML='<option value="__all">All patients</option>';
+  patientList().forEach(([k,label])=>{
+    const o=el("option");o.value=k;o.textContent=label+" ("+k.replace(/^[^·]*/,"").replace(/^·/,"")+")";
+    o.textContent=label+ (k.includes("·")?"  "+k.split("·")[1]:"");
+    sel.appendChild(o);
+  });
+  sel.value=[...sel.options].some(o=>o.value===prev)?prev:"__all";
+  // challenge selects
+  fillChallenge();
+}
+function recordsFiltered(){
+  const f=$("#filterPt").value;
+  let r=DATA.slice().sort((a,b)=>new Date(b.dt)-new Date(a.dt));
+  if(f!=="__all")r=r.filter(a=>ptKey(a)===f);
+  return r;
+}
+function renderHistory(){
+  const box=$("#history"); box.innerHTML="";
+  const recs=recordsFiltered();
+  if(!recs.length){box.innerHTML='<div class="empty">No saved assessments yet. Score a scale above and tap <b>Save assessment</b>.</div>';renderTrend();return;}
+  recs.forEach(a=>{
+    const r=compute(a.scale,a.scores);
+    const c=el("div","rec");
+    const head=`<div class="rec-top">
+        <span class="pill">${a.scale}</span>
+        <span style="font-weight:650">${a.init||"?"}</span>
+        <span style="color:var(--ink-soft);font-size:12.5px">${a.age?a.age:""}${a.sex||""}</span>
+        <span class="rec-score">${r.primary}${a.scale==="CQS"?"/4":"/"+r.max}</span>
+      </div>
+      <div class="rec-meta">${fmtDT(a.dt)} · <span style="${r.flagPos?'color:var(--amber);font-weight:650':'color:var(--green)'}">${r.flag}</span>${a.scale==="BFCRS"?` · screen ${r.secondary}/14`:""}</div>
+      ${a.comment?`<div class="rec-ctx"><b>Context:</b> ${escapeHtml(a.comment)}</div>`:""}`;
+    c.innerHTML=head;
+    const act=el("div","rec-actions");
+    const cp=el("button","btn ghost sm");cp.textContent="Copy to EMR";cp.onclick=()=>copyEMR(a);
+    const dl=el("button","btn ghost sm danger");dl.textContent="Delete";dl.onclick=()=>delRec(a.id);
+    act.appendChild(cp);act.appendChild(dl);
+    c.appendChild(act);
+    box.appendChild(c);
+  });
+  renderTrend();
+}
+function renderTrend(){
+  const box=$("#trend"); box.innerHTML="";
+  const f=$("#filterPt").value;
+  if(f==="__all")return;
+  // build per-scale series for this patient
+  const recs=DATA.filter(a=>ptKey(a)===f).sort((a,b)=>new Date(a.dt)-new Date(b.dt));
+  if(recs.length<2)return;
+  const byScale={};
+  recs.forEach(a=>{(byScale[a.scale]=byScale[a.scale]||[]).push(a);});
+  Object.keys(byScale).forEach(sc=>{
+    const series=byScale[sc];
+    if(series.length<2)return;
+    const wrap=el("div","trend");
+    wrap.innerHTML=`<p class="eyebrow" style="margin:6px 0 2px">${sc} trend — ${series.length} points</p>`;
+    wrap.appendChild(sparkline(series.map(a=>compute(a.scale,a.scores).primary), compute(sc==="CQS"?"CQS":sc,{}).max||(sc==="CQS"?4:sc==="PCRS"?60:69)));
+    const tbl=el("table","trend-tbl");
+    tbl.innerHTML="<tr><th>When</th><th>Context</th><th style='text-align:right'>Score</th><th style='text-align:right'>Δ</th></tr>";
+    let prev=null;
+    series.forEach(a=>{
+      const v=compute(a.scale,a.scores).primary;
+      let d="—",cls="";
+      if(prev!=null){const diff=v-prev;d=(diff>0?"+":"")+diff;cls=diff<0?"delta-dn":diff>0?"delta-up":"";}
+      prev=v;
+      const tr=el("tr");
+      tr.innerHTML=`<td>${fmtDT(a.dt)}</td><td>${a.comment?escapeHtml(a.comment).slice(0,42):"—"}</td><td class="n">${v}</td><td class="n ${cls}">${d}</td>`;
+      tbl.appendChild(tr);
+    });
+    wrap.appendChild(tbl);
+    box.appendChild(wrap);
+  });
+}
+function sparkline(vals,max){
+  const w=600,h=54,pad=6;
+  const xs=(i)=>pad+i*((w-2*pad)/(vals.length-1));
+  const ys=(v)=>h-pad-(v/(max||1))*(h-2*pad);
+  let pts=vals.map((v,i)=>`${xs(i).toFixed(1)},${ys(v).toFixed(1)}`).join(" ");
+  const svg=document.createElementNS("http://www.w3.org/2000/svg","svg");
+  svg.setAttribute("viewBox",`0 0 ${w} ${h}`);svg.setAttribute("class","spark");svg.setAttribute("preserveAspectRatio","none");
+  svg.innerHTML=`<polyline points="${pts}" fill="none" stroke="#0e6b5c" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"/>`+
+    vals.map((v,i)=>`<circle cx="${xs(i).toFixed(1)}" cy="${ys(v).toFixed(1)}" r="3" fill="#0e6b5c"/>`).join("");
+  return svg;
+}
+
+/* ---------------- challenge ---------------- */
+function fillChallenge(){
+  const opts=DATA.slice().sort((a,b)=>new Date(a.dt)-new Date(b.dt)).map(a=>{
+    const r=compute(a.scale,a.scores);
+    return `<option value="${a.id}">${a.init||"?"} · ${a.scale} · ${fmtDT(a.dt)} · ${r.primary}${a.scale==="CQS"?"/4":""}${a.comment?" · "+escapeHtml(a.comment).slice(0,24):""}</option>`;
+  });
+  const b=$("#chBefore"),af=$("#chAfter");
+  const pre1=b.value,pre2=af.value;
+  b.innerHTML='<option value="">—</option>'+opts.join("");
+  af.innerHTML='<option value="">—</option>'+opts.join("");
+  if([...b.options].some(o=>o.value===pre1))b.value=pre1;
+  if([...af.options].some(o=>o.value===pre2))af.value=pre2;
+  renderChallenge();
+}
+function renderChallenge(){
+  const out=$("#chResult");
+  const a=DATA.find(x=>x.id===$("#chBefore").value);
+  const b=DATA.find(x=>x.id===$("#chAfter").value);
+  if(!a||!b){out.innerHTML="";return;}
+  const ra=compute(a.scale,a.scores), rb=compute(b.scale,b.scores);
+  const sameScale=a.scale===b.scale;
+  const before=ra.primary, after=rb.primary;
+  const diff=after-before;
+  const pct = before>0 ? Math.round((before-after)/before*100) : (after===0?0:-100);
+  const positive = pct>=50 && diff<0;
+  const fillPct=Math.max(0,Math.min(100,pct));
+  out.innerHTML=`
+    ${!sameScale?'<div class="scale-note warn" style="margin-bottom:8px">Comparing different scales — interpret with caution.</div>':''}
+    <div class="meter">
+      <div class="meter-track">
+        <div class="meter-fill ${positive?'good':''}" style="width:${fillPct}%"></div>
+        <div class="meter-50"><span>50% response</span></div>
+      </div>
+    </div>
+    <div class="ch-out ${positive?'good':'bad'}">
+      Before <span class="hl">${before}</span> → After <span class="hl">${after}</span>
+      &nbsp;·&nbsp; change <span class="hl">${diff>0?'+':''}${diff}</span> (<span class="hl">${pct>0?'−':''}${Math.abs(pct)}%</span>)
+      &nbsp;·&nbsp; <b>${positive?'POSITIVE lorazepam response (≥50% reduction)':'Not a ≥50% reduction'}</b>
+    </div>
+    <button class="btn ghost sm" id="btnCopyCh" style="margin-top:10px">Copy comparison to EMR</button>`;
+  $("#btnCopyCh").onclick=()=>{
+    const txt=
+`CATATONIA — LORAZEPAM CHALLENGE COMPARISON (${a.scale}${sameScale?"":" vs "+b.scale} ${a.scale==="CQS"?"signs":"severity"})
+Patient: ${a.init||"?"}${a.age?" | "+a.age:""}${a.sex||""}
+Before (${fmtDT(a.dt)})${a.comment?" — "+a.comment:""}: ${before}${a.scale==="CQS"?"/4":""}
+After  (${fmtDT(b.dt)})${b.comment?" — "+b.comment:""}: ${after}${b.scale==="CQS"?"/4":""}
+Change: ${diff>0?'+':''}${diff} (${pct>0?'-':''}${Math.abs(pct)}%) — ${positive?'POSITIVE response (>=50% reduction)':'<50% reduction'}`;
+    copyText(txt,"Comparison copied");
+  };
+}
+
+/* ---------------- EMR copy ---------------- */
+function copyEMR(a){
+  const S=SCALES[a.scale], r=compute(a.scale,a.scores);
+  const present=S.items.filter(it=>(a.scores[it.n]||0)>0)
+    .map(it=>`${it.name} ${a.scores[it.n]}`);
+  let head;
+  if(a.scale==="CQS")head=`Result: ${r.primary}/4 sign(s) — ${r.positive?"POSITIVE SCREEN (proceed to full rating)":"negative"}`;
+  else if(a.scale==="BFCRS")head=`Screening (items 1-14): ${r.secondary}/14 present — ${r.positive?"POSITIVE (>=2)":"negative"}\nSeverity (items 1-23): ${r.primary}/69`;
+  else head=`Total: ${r.primary}/60 — ${r.positive?"SUGGESTIVE (>=9)":"below threshold (<9)"}`;
+  const txt=
+`CATATONIA ASSESSMENT — ${S.title} (${a.scale})
+Patient: ${a.init||"?"}${a.age?" | "+a.age+(a.sex||""):a.sex?" | "+a.sex:""} | ${fmtDT(a.dt)}
+${a.comment?"Context: "+a.comment+"\n":""}${head}
+Signs present: ${present.length?present.join(", "):"none"}`;
+  copyText(txt,"Copied to clipboard");
+}
+function copyText(txt,msg){
+  if(navigator.clipboard&&navigator.clipboard.writeText){
+    navigator.clipboard.writeText(txt).then(()=>toast(msg||"Copied")).catch(()=>fallbackCopy(txt,msg));
+  } else fallbackCopy(txt,msg);
+}
+function fallbackCopy(txt,msg){
+  const ta=el("textarea");ta.value=txt;ta.style.position="fixed";ta.style.opacity="0";document.body.appendChild(ta);
+  ta.select();try{document.execCommand("copy");toast(msg||"Copied");}catch(e){toast("Copy failed — select manually");}
+  document.body.removeChild(ta);
+}
+function escapeHtml(s){return (s||"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));}
+
+/* ---------------- save / delete ---------------- */
+async function saveAssessment(){
+  const init=$("#fInit").value.trim().toUpperCase();
+  if(!init){toast("Add patient initials first");$("#fInit").focus();return;}
+  const r=compute(scale,scores);
+  const anyScored=Object.values(scores).some(v=>v>0)||scale!=="CQS";
+  const rec={
+    id:"a"+Date.now()+Math.random().toString(36).slice(2,6),
+    init, age:$("#fAge").value.trim(), sex:$("#fSex").value,
+    dt:$("#fDate").value||nowLocal(), comment:$("#fComment").value.trim(),
+    scale, scores:{...scores}
+  };
+  DATA.push(rec);
+  await dbSet(KEY,DATA);
+  refreshFilters();renderHistory();
+  toast("Saved — "+init+" "+scale+" "+r.primary+(scale==="CQS"?"/4":"/"+r.max));
+  // reset item scores but keep patient identity for quick repeat (e.g., before/after)
+  scores={};renderScale();
+}
+async function delRec(id){
+  DATA=DATA.filter(a=>a.id!==id);
+  await dbSet(KEY,DATA);
+  refreshFilters();renderHistory();toast("Deleted");
+}
+
+/* ---------------- events ---------------- */
+$("#items").addEventListener("click",e=>{
+  const b=e.target.closest("button[data-n]");if(!b)return;
+  const n=+b.dataset.n, v=+b.dataset.v;
+  scores[n]= scores[n]===v ? undefined : v;   // tap again to clear
+  if(scores[n]===undefined)delete scores[n];
+  renderScale();
+});
+$("#tabs").addEventListener("click",e=>{
+  const t=e.target.closest(".tab");if(!t)return;
+  scale=t.dataset.scale;scores={};renderScale();
+});
+$("#ctxChips").addEventListener("click",e=>{
+  const c=e.target.closest(".chip");if(!c)return;
+  $("#fComment").value=c.textContent;
+});
+$("#btnDefs").onclick=()=>{showDefs=!showDefs;$("#btnDefs").textContent=showDefs?"Hide anchors":"Show anchors";renderScale();};
+$("#btnReset").onclick=()=>{scores={};renderScale();toast("Items cleared");};
+$("#btnSave").onclick=saveAssessment;
+$("#filterPt").addEventListener("change",()=>{renderHistory();});
+$("#chBefore").addEventListener("change",renderChallenge);
+$("#chAfter").addEventListener("change",renderChallenge);
+$("#btnClearAll").onclick=async()=>{
+  if(!DATA.length){toast("Nothing to clear");return;}
+  if(confirm("Delete ALL saved assessments on this device? This cannot be undone.")){
+    DATA=[];await dbSet(KEY,DATA);refreshFilters();renderHistory();toast("All data cleared");
+  }
+};
+$("#btnExport").onclick=()=>{
+  const blob=new Blob([JSON.stringify(DATA,null,2)],{type:"application/json"});
+  const url=URL.createObjectURL(blob);const a=el("a");a.href=url;
+  a.download="catatonia-assessments-"+new Date().toISOString().slice(0,10)+".json";
+  document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(url);
+  toast("Exported "+DATA.length+" record(s)");
+};
+$("#btnImport").onclick=()=>$("#fileImport").click();
+$("#fileImport").addEventListener("change",e=>{
+  const f=e.target.files[0];if(!f)return;
+  const rd=new FileReader();
+  rd.onload=async()=>{
+    try{
+      const arr=JSON.parse(rd.result);
+      if(!Array.isArray(arr))throw 0;
+      const ids=new Set(DATA.map(a=>a.id));
+      let added=0;
+      arr.forEach(a=>{if(a&&a.id&&a.scale&&a.scores&&!ids.has(a.id)){DATA.push(a);added++;}});
+      await dbSet(KEY,DATA);refreshFilters();renderHistory();
+      toast("Imported "+added+" new record(s)");
+    }catch(err){toast("Invalid file");}
+    e.target.value="";
+  };
+  rd.readAsText(f);
+});
+
+/* ---------------- init ---------------- */
+(async function init(){
+  $("#fDate").value=nowLocal();
+  DATA=(await dbGet(KEY))||[];
+  // default scale: pediatric hospital context
+  scale="CQS";
+  renderScale();refreshFilters();renderHistory();
+})();
+</script>
+</body>
+</html>
