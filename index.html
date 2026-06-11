@@ -56,6 +56,21 @@
   .scale-note{font-size:12px;color:var(--ink-soft);background:var(--line-2);
     border-radius:9px;padding:9px 11px;margin:10px 0}
   .scale-note.warn{background:var(--amber-bg);color:#7c4513}
+  .ref{display:inline-block;margin-top:6px;font-size:11.5px;color:var(--ink-soft)}
+  .ref a{color:var(--teal-d);font-weight:600;text-decoration:none}
+  .ref a:hover{text-decoration:underline}
+  .vid{font-size:10.5px;font-weight:600;color:var(--teal);text-decoration:none;
+    border:1px solid var(--line);border-radius:6px;padding:1px 6px;margin-left:6px;white-space:nowrap}
+  .vid:hover{border-color:var(--teal);background:var(--line-2)}
+  .watch{font-size:10.5px;font-weight:600;color:var(--teal);cursor:pointer;border:1px solid var(--line);
+    border-radius:6px;padding:1px 7px;margin-left:6px;white-space:nowrap;background:#fff;font-family:var(--sans)}
+  .watch:hover{border-color:var(--teal);background:var(--line-2)}
+  .vidbox{margin:8px 0 2px 26px;max-width:460px}
+  .vidbox .frame{position:relative;width:100%;aspect-ratio:16/9;border-radius:10px;overflow:hidden;
+    border:1px solid var(--line);background:#000}
+  .vidbox .frame iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+  .vidbox .vid-src{display:inline-block;margin-top:5px;font-size:11px;color:var(--teal-d);text-decoration:none;font-weight:600}
+  .vidbox .vid-src:hover{text-decoration:underline}
   .item{border-top:1px solid var(--line-2);padding:11px 0}
   .item:first-child{border-top:0}
   .item-top{display:flex;align-items:baseline;gap:8px}
@@ -292,6 +307,7 @@
       <b>Scales &amp; sources</b><br>
       <b>CQS</b> — Catatonia Quick Screen. Luccarelli J, et&nbsp;al. <i>Acta Psychiatrica Scandinavica</i> (2025). Any one of excitement, mutism, staring, or posturing = positive screen → proceed to a full rating.<br>
       <b>BFCRS</b> — Bush–Francis Catatonia Rating Scale. Bush G, Fink M, Petrides G, Dowling F, Francis A. Catatonia. I. Rating scale and standardized examination. <i>Acta Psychiatr Scand.</i> 1996;93(2):129–136. 23 items scored 0–3 (six items 0/3 only); screening instrument = first 14 items, ≥2 present = positive screen. Official training materials: University of Rochester (Oldham, Wortzel &amp; Francis).<br>
+      &nbsp;&nbsp;Official resources ↗ <a href="https://bfcrs.urmc.edu/" target="_blank" rel="noopener">bfcrs.urmc.edu</a> · <a href="https://www.urmc.rochester.edu/psychiatry/divisions/collaborative-care-and-wellness/bush-francis-catatonia-rating-scale/calculator" target="_blank" rel="noopener">interactive calculator</a> · <a href="https://www.urmc.rochester.edu/psychiatry/divisions/collaborative-care-and-wellness/bush-francis-catatonia-rating-scale/bfcrs" target="_blank" rel="noopener">item scoring videos</a> · <a href="https://www.urmc.rochester.edu/psychiatry/divisions/collaborative-care-and-wellness/bush-francis-catatonia-rating-scale/educational-modules" target="_blank" rel="noopener">training modules</a> · <a href="https://www.youtube.com/playlist?list=PLDIWX3558_y9P1hTkbqnofVMGlnW1JjyI" target="_blank" rel="noopener">video playlist</a><br>
       <b>PCRS</b> — Pediatric Catatonia Rating Scale. Benarous X, Consoli A, Raffin M, et&nbsp;al. Validation of the Pediatric Catatonia Rating Scale (PCRS). <i>Schizophr Res.</i> 2016;176(2–3):378–386. 20 items, max 60, suggestive threshold ≥9.<br><br>
 
       <b>Attribution &amp; copyright.</b> The catatonia rating scales referenced here were created by their respective authors and remain their intellectual property and that of their publishers. This tool reproduces only short item labels, the numeric scoring structure, and validated cut-offs (facts/method), with all item descriptions written in original wording for bedside reference — it is not a reproduction of any published manual or anchor text. For the authoritative instruments and scoring manuals, consult the original publications. The PCRS item set here is an independent functional rendering; verify against Benarous et&nbsp;al. (2016) before clinical use.<br><br>
@@ -321,6 +337,41 @@ const SEV=[ {v:0,h:"absent"},{v:1,h:"mild"},{v:2,h:"mod"},{v:3,h:"severe"} ];
 const BIN=[ {v:0,h:"absent"},{v:3,h:"present"} ];
 const PA =[ {v:0,h:"absent"},{v:1,h:"present"} ];
 
+/* Official URMC BFCRS resources (Wortzel, Oldham & Francis; calculator with Patrick Ying) */
+const BF_HUB="https://bfcrs.urmc.edu/";
+const BF_CALC="https://www.urmc.rochester.edu/psychiatry/divisions/collaborative-care-and-wellness/bush-francis-catatonia-rating-scale/calculator";
+const BF_VIDEOS="https://www.urmc.rochester.edu/psychiatry/divisions/collaborative-care-and-wellness/bush-francis-catatonia-rating-scale/bfcrs";
+const BF_MODULES="https://www.urmc.rochester.edu/psychiatry/divisions/collaborative-care-and-wellness/bush-francis-catatonia-rating-scale/educational-modules";
+const BF_PLAYLIST="https://www.youtube.com/playlist?list=PLDIWX3558_y9P1hTkbqnofVMGlnW1JjyI";
+/* Official URMC YouTube video IDs, keyed by THIS app's BFCRS item numbers.
+   Source list was in official scale order (Excitement=1…); remapped here by item
+   identity because this app orders items differently (Excitement is #14 here). */
+const BF_VIDEO={
+  1:"-jcW3wlmOEo",   // Immobility / stupor      (official #2)
+  2:"h8cLSRkp2Io",   // Mutism                   (official #3)
+  3:"26bAY75JvXk",   // Staring                  (official #4)
+  4:"SPJslTt4Rgc",   // Posturing / catalepsy    (official #5)
+  5:"hxdJoqmvLos",   // Grimacing                (official #6)
+  6:"8mvcg8lYbCU",   // Echopraxia / echolalia   (official #7)
+  7:"fxN_SvcnzYQ",   // Stereotypy               (official #8)
+  8:"gNC7DGa95jo",   // Mannerisms               (official #9)
+  9:"vKzDO-aBD2I",   // Verbigeration            (official #10)
+  10:"12BfJSzYuw0",  // Rigidity                 (official #11)
+  11:"dOlXxBmhwdg",  // Negativism               (official #12)
+  12:"DdTR8QzA7No",  // Waxy flexibility         (official #13)
+  13:"6eG7KL-IB3A",  // Withdrawal               (official #14)
+  14:"mIbI-v6Q-jU",  // Excitement               (official #1)
+  15:"cmA1JoJxjGQ",  // Impulsivity              (official #15)
+  16:"dW5gYLWINyA",  // Automatic obedience      (official #16)
+  17:"xtjMxbjJ8yU",  // Passive obedience/mitgehen (official #17)
+  18:"2eez4EXPPT4",  // Muscle resistance/gegenhalten (official #18)
+  19:"F4iu7X2_EFs",  // Motorically stuck/ambitendency (official #19)
+  20:"ks7_HZ8mgwM",  // Grasp reflex             (official #20)
+  21:"RV1JjOXzA5U",  // Perseveration            (official #21)
+  22:"Nr7Rp_V1nZ4",  // Combativeness            (official #22)
+  23:"A7l6eB3Kwf0"   // Autonomic abnormality    (official #23)
+};
+
 const SCALES = {
   CQS:{
     title:"Catatonia Quick Screen", max:4, type:"screen",
@@ -334,7 +385,11 @@ const SCALES = {
   },
   BFCRS:{
     title:"Bush–Francis Catatonia Rating Scale", max:69, type:"bfcrs",
-    note:{cls:"", html:"Items 1–14 are the screening instrument (<b>≥2 present = positive screen</b>). All 23 items sum to a severity score."},
+    note:{cls:"", html:'Items 1–14 are the screening instrument (<b>≥2 present = positive screen</b>). All 23 items sum to a severity score.'
+      +'<br><span class="ref">Official reference — URMC (Wortzel · Oldham · Francis): '
+      +'<a href="'+BF_CALC+'" target="_blank" rel="noopener">interactive calculator ↗</a> · '
+      +'<a href="'+BF_VIDEOS+'" target="_blank" rel="noopener">per-item scoring videos ↗</a> · '
+      +'<a href="'+BF_MODULES+'" target="_blank" rel="noopener">standardized-patient training videos ↗</a></span>'},
     items:[
       {n:1,name:"Immobility / stupor",def:"Movement and reactivity to the environment profoundly reduced.",opts:SEV},
       {n:2,name:"Mutism",def:"Little or no speech relative to what's expected.",opts:SEV},
@@ -451,7 +506,14 @@ function renderScale(){
     const cur=scores[it.n];
     const row=el("div","item");
     const top=el("div","item-top");
-    top.innerHTML=`<span class="num">${it.n}</span><span class="item-name">${it.name}<span class="v">${cur!=null?cur:""}</span></span>`;
+    let vid="", inlineId="";
+    if(scale==="BFCRS"){
+      inlineId=BF_VIDEO[it.n]||"";
+      vid = inlineId
+        ? ` <button type="button" class="watch" data-vid="${inlineId}">▶ Watch</button>`
+        : ` <a class="vid" href="${BF_VIDEOS}" target="_blank" rel="noopener" title="Official URMC scoring videos (opens new tab)">▶ video ↗</a>`;
+    }
+    top.innerHTML=`<span class="num">${it.n}</span><span class="item-name">${it.name}<span class="v">${cur!=null?cur:""}</span>${vid}</span>`;
     row.appendChild(top);
     if(showDefs){const d=el("div","item-def");d.textContent=it.def;row.appendChild(d);}
     const seg=el("div","seg"+(it.opts===BIN?" bin":""));
@@ -462,6 +524,11 @@ function renderScale(){
       seg.appendChild(b);
     });
     row.appendChild(seg);
+    if(inlineId){
+      const vb=el("div","vidbox hide");
+      vb.innerHTML=`<div class="frame"></div><a class="vid-src" href="${BF_VIDEOS}" target="_blank" rel="noopener">Official URMC video ↗</a>`;
+      row.appendChild(vb);
+    }
     box.appendChild(row);
   });
   renderRun();
@@ -811,6 +878,19 @@ async function delRec(id){
 
 /* ---------------- events ---------------- */
 $("#items").addEventListener("click",e=>{
+  const w=e.target.closest(".watch");
+  if(w){
+    const item=w.closest(".item"), box=item&&item.querySelector(".vidbox");
+    if(box){
+      if(box.dataset.loaded!=="1"){
+        box.querySelector(".frame").innerHTML=`<iframe src="https://www.youtube-nocookie.com/embed/${w.dataset.vid}?rel=0" title="BFCRS item scoring video (URMC)" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen loading="lazy"></iframe>`;
+        box.dataset.loaded="1";
+      }
+      const hidden=box.classList.toggle("hide");
+      w.textContent=hidden?"▶ Watch":"▼ Hide";
+    }
+    return;
+  }
   const b=e.target.closest("button[data-n]");if(!b)return;
   const n=+b.dataset.n, v=+b.dataset.v;
   scores[n]= scores[n]===v ? undefined : v;   // tap again to clear
